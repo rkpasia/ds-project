@@ -33,6 +33,8 @@ public class LastMile {
 
 
     car.tell("RICHIESTA", passenger);
+    car.tell("RICHIESTA", passenger);
+    car.tell("RICHIESTA", passenger);
 
 
   }

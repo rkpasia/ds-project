@@ -13,7 +13,17 @@ public class Car extends AbstractActor {
         return Props.create(Car.class, () -> new Car());
     }
 
-    public Car(){}
+    private enum CarStatus {
+        AVAILABLE,
+        MATCHED,
+        TRANSIT
+    }
+
+    private CarStatus status;
+
+    public Car(){
+        this.status = CarStatus.AVAILABLE;
+    }
 
     @Override
     public Receive createReceive(){
@@ -22,7 +32,13 @@ public class Car extends AbstractActor {
                         String.class,
                         s -> {
                             log.info("Ricevuto {} da {}", s, getSender());
-                            getSender().tell("DISPONIBILE", getSelf());
+                            if(this.status == CarStatus.AVAILABLE){
+                                getSender().tell("DISPONIBILE", getSelf());
+                                this.status = CarStatus.MATCHED;
+                            } else {
+                                log.info("NON DISPONIBILE");
+                            }
+
                         })
                 .matchAny(o -> log.info("Messaggio non conosciuto"))
                 .build();
