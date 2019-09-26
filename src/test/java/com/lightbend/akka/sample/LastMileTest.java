@@ -14,7 +14,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 
-public class AkkaQuickstartTest {
+public class LastMileTest {
     static ActorSystem system;
 
     @BeforeClass
