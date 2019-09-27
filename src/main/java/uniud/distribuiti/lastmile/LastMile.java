@@ -34,13 +34,9 @@ public class LastMile {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    passenger.tell("RICHIESTA", null);
 
-    /*car.tell("RICHIESTA", passenger);
-    car.tell("RICHIESTA", passenger);
-    car.tell("RICHIESTA", passenger);*/
-
-
+    passenger.tell(new Passenger.EmitRequestMessage(), null);
+    
   }
 
   private static ActorRef setSinglePassenger(){
