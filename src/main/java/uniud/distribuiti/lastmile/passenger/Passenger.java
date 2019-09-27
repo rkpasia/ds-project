@@ -16,6 +16,8 @@ public class Passenger extends AbstractActor {
         return Props.create(Passenger.class, () -> new Passenger());
     }
 
+    public static class EmitRequestMessage {}
+
     ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     public Passenger(){}
@@ -23,7 +25,7 @@ public class Passenger extends AbstractActor {
     // Inoltro richiesta di trasporto
     // Inizializzo nuovo attore
     // Inoltro richiesta con riferimento all attore figlio gestore della mia richiesta
-    public void emitTransportRequest(){
+    private void emitTransportRequest(EmitRequestMessage msg){
         ActorRef transportRequest = getContext().actorOf(TransportRequest.props(), "TransportRequest");
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", "RICHIESTSTA"), transportRequest);
     }
@@ -31,7 +33,6 @@ public class Passenger extends AbstractActor {
     @Override
     public Receive createReceive(){
 
-        // TODO: Fare messaggio che quando ricevuto emette la richiesta di trasporto
         return receiveBuilder()
                 .match(
                         String.class,
@@ -39,6 +40,7 @@ public class Passenger extends AbstractActor {
                             log.info("Ricevuto {} da {}", s, getSender());
                         }
                 )
+                .match(EmitRequestMessage.class, this::emitTransportRequest)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }
