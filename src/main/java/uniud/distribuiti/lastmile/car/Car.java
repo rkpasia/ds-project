@@ -36,6 +36,7 @@ public class Car extends AbstractActor {
 
     private void evaluateRequest(TransportRequestMessage msg){
         System.out.println("VALUTAZIONE " + msg.toString());
+        getContext().actorOf(TransportRequestMngr.props(getSender()), "CarTransportRequestManager");
     }
 
     @Override
