@@ -5,6 +5,8 @@ import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
+import java.io.Serializable;
+
 // TransportRequest actor
 // Questo è l'attore responsabile della gestione di una richiesta
 // di trasporto effettuata dal passeggero parent di questo attore
@@ -16,6 +18,8 @@ public class TransportRequest extends AbstractActor {
         return Props.create(TransportRequest.class, () -> new TransportRequest());
     }
 
+    public static class AvailableCarMessage implements Serializable {}
+
     public TransportRequest(){}
 
     @Override
@@ -26,9 +30,15 @@ public class TransportRequest extends AbstractActor {
     @Override
     public Receive createReceive(){
         return receiveBuilder()
+                .match(
+                        AvailableCarMessage.class,
+                        msg -> {
+                            log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
+                        }
+                )
                 .matchAny(
                         o -> {
-                             log.info("{} - MESSAGGIO NON SUPPORTATO - {}", getSelf(), o);
+                            log.info("{} - MESSAGGIO NON SUPPORTATO - {}", getSelf(), o);
                         }
                 )
                 .build();
