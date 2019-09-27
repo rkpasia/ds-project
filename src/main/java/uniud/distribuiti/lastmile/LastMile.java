@@ -45,7 +45,7 @@ public class LastMile {
 
   private static ActorRef setSinglePassenger(){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
-    Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2551").withFallback(ConfigFactory.load());
+    Config config = ConfigFactory.load();
     // Inizializzazione nuova gerarchia di attori - PASSEGGERO
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
@@ -54,7 +54,7 @@ public class LastMile {
 
   private static ActorRef setSingleCar(){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
-    Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2552").withFallback(ConfigFactory.load());
+    Config config = ConfigFactory.load();
     // Inizializzazione nuova gerarchia di attori - MACCHINA
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
