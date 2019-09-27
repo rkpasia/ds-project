@@ -7,6 +7,7 @@ import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.car.Car;
 
 public class Passenger extends AbstractActor {
 
@@ -27,7 +28,7 @@ public class Passenger extends AbstractActor {
     // Inoltro richiesta con riferimento all attore figlio gestore della mia richiesta
     private void emitTransportRequest(EmitRequestMessage msg){
         ActorRef transportRequest = getContext().actorOf(TransportRequest.props(), "TransportRequest");
-        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", "RICHIESTSTA"), transportRequest);
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage()), transportRequest);
     }
 
     @Override

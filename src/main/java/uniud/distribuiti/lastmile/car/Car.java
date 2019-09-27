@@ -7,6 +7,7 @@ import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import java.io.Serializable;
 
 public class Car extends AbstractActor {
 
@@ -15,6 +16,9 @@ public class Car extends AbstractActor {
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
     }
+
+    // TODO: Verificare se ci sono altri serializzatori migliori
+    public static class TransportRequestMessage implements Serializable {}
 
     private enum CarStatus {
         AVAILABLE,
@@ -28,6 +32,10 @@ public class Car extends AbstractActor {
         this.status = CarStatus.AVAILABLE;
         ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
+    }
+
+    private void evaluateRequest(TransportRequestMessage msg){
+        System.out.println("VALUTAZIONE " + msg.toString());
     }
 
     @Override
@@ -46,6 +54,7 @@ public class Car extends AbstractActor {
 
                         })
                 .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("subscribed"))
+                .match(TransportRequestMessage.class, this::evaluateRequest)
                 .matchAny(o -> log.info("Messaggio non conosciuto"))
                 .build();
     }
