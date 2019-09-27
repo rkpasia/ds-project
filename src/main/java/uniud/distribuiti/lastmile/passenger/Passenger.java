@@ -20,15 +20,23 @@ public class Passenger extends AbstractActor {
 
     public Passenger(){}
 
+    // Inoltro richiesta di trasporto
+    // Inizializzo nuovo attore
+    // Inoltro richiesta con riferimento all attore figlio gestore della mia richiesta
+    public void emitTransportRequest(){
+        ActorRef transportRequest = getContext().actorOf(TransportRequest.props(), "TransportRequest");
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", "RICHIESTSTA"), transportRequest);
+    }
+
     @Override
     public Receive createReceive(){
 
+        // TODO: Fare messaggio che quando ricevuto emette la richiesta di trasporto
         return receiveBuilder()
                 .match(
                         String.class,
                         s -> {
                             log.info("Ricevuto {} da {}", s, getSender());
-                            mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", "RICHIESTA"), getSelf());
                         }
                 )
                 .matchAny(o -> log.info("received unknown message"))
