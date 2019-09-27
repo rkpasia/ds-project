@@ -1,7 +1,10 @@
 package uniud.distribuiti.lastmile.car;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
@@ -23,6 +26,8 @@ public class Car extends AbstractActor {
 
     public Car(){
         this.status = CarStatus.AVAILABLE;
+        ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
+        mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
     }
 
     @Override
@@ -40,6 +45,7 @@ public class Car extends AbstractActor {
                             }
 
                         })
+                .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("subscribed"))
                 .matchAny(o -> log.info("Messaggio non conosciuto"))
                 .build();
     }

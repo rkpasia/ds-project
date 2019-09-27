@@ -11,8 +11,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.typesafe.akka:akka-actor_2.13:2.5.25" level="project" />
+    <orderEntry type="library" name="Maven: com.typesafe.akka:akka-cluster-tools_2.13:2.5.25" level="project" />
     <orderEntry type="library" name="Maven: org.scala-lang:scala-library:2.13.0" level="project" />
+    <orderEntry type="library" name="Maven: com.typesafe.akka:akka-coordination_2.13:2.5.25" level="project" />
+    <orderEntry type="library" name="Maven: com.typesafe.akka:akka-actor_2.13:2.5.25" level="project" />
     <orderEntry type="library" name="Maven: com.typesafe:config:1.3.3" level="project" />
     <orderEntry type="library" name="Maven: org.scala-lang.modules:scala-java8-compat_2.13:0.9.0" level="project" />
     <orderEntry type="library" name="Maven: com.typesafe.akka:akka-cluster_2.13:2.5.25" level="project" />

@@ -1,7 +1,5 @@
 package uniud.distribuiti.lastmile;
 
-import java.io.IOException;
-
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.ActorSystem;
@@ -16,7 +14,7 @@ import uniud.distribuiti.lastmile.passenger.Passenger;
 public class LastMile {
   public static void main(String[] args) {
 
-    String[] ports = {"2551", "2552", "0"};
+    String[] ports = {"3000","3001"};
 
     // Configuration of cluster seed nodes
     for(String port : ports) {
@@ -31,17 +29,23 @@ public class LastMile {
     ActorRef passenger = setSinglePassenger();
     ActorRef car = setSingleCar();
 
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    passenger.tell("RICHIESTA", null);
 
+    /*car.tell("RICHIESTA", passenger);
     car.tell("RICHIESTA", passenger);
-    car.tell("RICHIESTA", passenger);
-    car.tell("RICHIESTA", passenger);
+    car.tell("RICHIESTA", passenger);*/
 
 
   }
 
   private static ActorRef setSinglePassenger(){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
-    Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2600").withFallback(ConfigFactory.load());
+    Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2551").withFallback(ConfigFactory.load());
     // Inizializzazione nuova gerarchia di attori - PASSEGGERO
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
@@ -50,7 +54,7 @@ public class LastMile {
 
   private static ActorRef setSingleCar(){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
-    Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2601").withFallback(ConfigFactory.load());
+    Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2552").withFallback(ConfigFactory.load());
     // Inizializzazione nuova gerarchia di attori - MACCHINA
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
