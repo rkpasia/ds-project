@@ -3,8 +3,7 @@ package uniud.distribuiti.lastmile.car;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.actor.dsl.Creators;
-import uniud.distribuiti.lastmile.passenger.TransportRequest;
+import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // Transport Request Manager acotr
 // Attore responsabile della gestione di una richiesta
@@ -27,14 +26,27 @@ public class TransportRequestMngr extends AbstractActor {
 
 
         // Risposta fake di disponibilità
-        transportRequest.tell(new TransportRequest.AvailableCarMessage(), getSelf());
+        transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
     }
 
     private ActorRef transportRequest;
 
+    private void manageBookingRequest(TransportCoordination msg){
+        // TODO: Verifica disponibilità a prenotare la macchina
+        // Questo metodo verifica che la macchina sia disponibile
+        // successivamente risponde con la disponibilità
+
+        // supponiamo che al momento la disponibilità sia confermata
+        transportRequest.tell(new TransportCoordination.CarBookingConfirmedMsg(), getContext().getParent());
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
+                .match(
+                        TransportCoordination.CarBookingRequestMsg.class,
+                        this::manageBookingRequest
+                )
                 .matchAny(
                         o -> {
 

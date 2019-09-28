@@ -4,8 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-
-import java.io.Serializable;
+import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // TransportRequest actor
 // Questo è l'attore responsabile della gestione di una richiesta
@@ -18,8 +17,6 @@ public class TransportRequest extends AbstractActor {
         return Props.create(TransportRequest.class, () -> new TransportRequest());
     }
 
-    public static class AvailableCarMessage implements Serializable {}
-
     public TransportRequest(){}
 
     @Override
@@ -27,14 +24,27 @@ public class TransportRequest extends AbstractActor {
         System.out.println("TRANSPORT REQUEST STARTED");
     }
 
+    private void evaluateCar(TransportCoordination msg){
+        log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
+
+        // Quando una macchina mi da disponibilità la richiedo subito [greedy] (proof of work)
+        getSender().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+    }
+
+    private void bookingConfirmation(TransportCoordination msg){
+        log.info("MACCHINA PRENOTATA {}", getSender());
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
                 .match(
-                        AvailableCarMessage.class,
-                        msg -> {
-                            log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
-                        }
+                        TransportCoordination.CarAvailableMsg.class,
+                        this::evaluateCar
+                )
+                .match(
+                        TransportCoordination.CarBookingConfirmedMsg.class,
+                        this::bookingConfirmation
                 )
                 .matchAny(
                         o -> {
