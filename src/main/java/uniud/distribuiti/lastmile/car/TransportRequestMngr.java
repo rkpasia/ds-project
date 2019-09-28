@@ -12,12 +12,26 @@ import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordina
 // - controlla distanza
 public class TransportRequestMngr extends AbstractActor {
 
+    // Riferimento ad attore per coordinamento richiesta di trasporto
+    private ActorRef transportRequest;
+
+    private RequestManagerStatus status;
+    private enum RequestManagerStatus {
+        EVALUATION,         // Valutazione richiesta
+        AVAILABLE,          // Macchina disponibile
+        NOT_AVAILABLE,      // Macchina non disponibile
+        EXPIRED,            // Si presume che la macchina non venga più considerata dal passeggero
+        REJECTED,           // Macchina è stata respinta dal passeggero
+        CONFIRMED,          // Macchina è stata confermata dal passeggero
+    }
+
     public static Props props(ActorRef transportRequest){
         return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest));
     }
 
     public TransportRequestMngr(ActorRef transportRequest){
         this.transportRequest = transportRequest;
+        this.status = RequestManagerStatus.EVALUATION;
 
         // TODO: Implementazione valutazione della richiesta
         //  - considerare la posizione del passeggero
@@ -28,8 +42,6 @@ public class TransportRequestMngr extends AbstractActor {
         // Risposta fake di disponibilità
         transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
     }
-
-    private ActorRef transportRequest;
 
     private void manageBookingRequest(TransportCoordination msg){
         // TODO: Verifica disponibilità a prenotare la macchina

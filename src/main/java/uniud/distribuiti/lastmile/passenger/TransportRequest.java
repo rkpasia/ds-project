@@ -13,11 +13,20 @@ public class TransportRequest extends AbstractActor {
 
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
+    private TransportRequestStatus status;
+    private enum TransportRequestStatus {
+        EMITTED,
+        BOOKING,
+        CONFIRMED
+    }
+
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
     }
 
-    public TransportRequest(){}
+    public TransportRequest(){
+        this.status = TransportRequestStatus.EMITTED;
+    }
 
     @Override
     public void preStart(){
