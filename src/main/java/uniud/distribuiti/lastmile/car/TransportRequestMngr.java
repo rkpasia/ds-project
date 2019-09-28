@@ -19,10 +19,10 @@ public class TransportRequestMngr extends AbstractActor {
     public TransportRequestMngr(ActorRef transportRequest){
         this.transportRequest = transportRequest;
 
-        //TODO: Implementazione valutazione della richiesta
-        // - considerare la posizione del passeggero
-        // - considerare il carburante a disposizione del mio parent
-        // - formulazione di una risposta per la richiesta (anche in caso negativo?)
+        // TODO: Implementazione valutazione della richiesta
+        //  - considerare la posizione del passeggero
+        //  - considerare il carburante a disposizione del mio parent
+        //  - formulazione di una risposta per la richiesta (anche in caso negativo?)
 
 
         // Risposta fake di disponibilità
@@ -33,8 +33,8 @@ public class TransportRequestMngr extends AbstractActor {
 
     private void manageBookingRequest(TransportCoordination msg){
         // TODO: Verifica disponibilità a prenotare la macchina
-        // Questo metodo verifica che la macchina sia disponibile
-        // successivamente risponde con la disponibilità
+        //  Questo metodo verifica che la macchina sia disponibile
+        //  successivamente risponde con la disponibilità
 
         // supponiamo che al momento la disponibilità sia confermata
         transportRequest.tell(new TransportCoordination.CarBookingConfirmedMsg(), getContext().getParent());
