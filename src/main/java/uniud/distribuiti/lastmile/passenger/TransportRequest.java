@@ -40,7 +40,12 @@ public class TransportRequest extends AbstractActor {
         getSender().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
     }
 
+    // Metodo che riceve la conferma della prenotazione di una macchina
+    // Dovrà notificare il passeggero che entrerà in relazione diretta con la macchina per la fase di coordinamento
+    // dello stato del trasporto.
     private void bookingConfirmation(TransportCoordination msg){
+        // TODO: Notifica passeggero della ricezione di conferma della prenotazione da parte di una macchina
+        //  Questo è l'entry poit della fase due della richiesta, la fase di coordinamento dello stato del trasporto.
         log.info("MACCHINA PRENOTATA {}", getSender());
     }
 
