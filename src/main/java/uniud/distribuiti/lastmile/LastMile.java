@@ -9,10 +9,13 @@ import com.typesafe.config.ConfigFactory;
 
 import uniud.distribuiti.lastmile.car.Car;
 import uniud.distribuiti.lastmile.cluster.ClusterEventsListener;
+import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.passenger.Passenger;
 
+import java.io.FileNotFoundException;
+
 public class LastMile {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws FileNotFoundException {
 
     String[] ports = {"3000","3001"};
 
@@ -35,6 +38,12 @@ public class LastMile {
       e.printStackTrace();
     }
     passenger.tell("RICHIESTA", null);
+
+    Location loc = new Location();
+
+    Location.shortestPath(0,4);
+    Location.printDistance();
+    Location.printPath();
 
     /*car.tell("RICHIESTA", passenger);
     car.tell("RICHIESTA", passenger);
