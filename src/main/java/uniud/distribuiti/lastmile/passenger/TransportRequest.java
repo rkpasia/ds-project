@@ -33,12 +33,17 @@ public class TransportRequest extends AbstractActor {
         System.out.println("TRANSPORT REQUEST STARTED");
     }
 
+    // TODO: Gestione disponibilità macchina
+    //  Metodo organizza la disponibilità delle macchine che rispondono alla richiesta di trasporto del passeggero
     private void evaluateCar(TransportCoordination msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
         // Quando una macchina mi da disponibilità la richiedo subito [greedy] (proof of work)
         getSender().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
     }
+
+    // Selezione di una macchina che ha dato disponibilità al passeggero
+    private void selectCar(){}
 
     // Metodo che riceve la conferma della prenotazione di una macchina
     // Dovrà notificare il passeggero che entrerà in relazione diretta con la macchina per la fase di coordinamento
