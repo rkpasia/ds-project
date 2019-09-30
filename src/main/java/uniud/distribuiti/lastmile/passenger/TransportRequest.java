@@ -1,10 +1,13 @@
 package uniud.distribuiti.lastmile.passenger;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
+
+import java.util.ArrayList;
 
 // TransportRequest actor
 // Questo è l'attore responsabile della gestione di una richiesta
@@ -20,6 +23,8 @@ public class TransportRequest extends AbstractActor {
         CONFIRMED
     }
 
+    private ArrayList<ActorRef> availableCars = new ArrayList<ActorRef>();
+
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
     }
@@ -33,17 +38,20 @@ public class TransportRequest extends AbstractActor {
         System.out.println("TRANSPORT REQUEST STARTED");
     }
 
-    // TODO: Gestione disponibilità macchina
-    //  Metodo organizza la disponibilità delle macchine che rispondono alla richiesta di trasporto del passeggero
     private void evaluateCar(TransportCoordination msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
-        // Quando una macchina mi da disponibilità la richiedo subito [greedy] (proof of work)
-        getSender().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+        // Considerare la creazione di un oggetto tupla <CarRef, CarType, EstTransTime>
+        // - EstTransTime tempo di trasporto stimato
+        availableCars.add(getSender());
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
-    private void selectCar(){}
+    private void selectCar(TransportCoordination msg){
+        // Scelgo sempre la prima macchina che mi ha risposto per il trasporto
+        log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
+        availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+    }
 
     // Metodo che riceve la conferma della prenotazione di una macchina
     // Dovrà notificare il passeggero che entrerà in relazione diretta con la macchina per la fase di coordinamento
@@ -60,6 +68,10 @@ public class TransportRequest extends AbstractActor {
                 .match(
                         TransportCoordination.CarAvailableMsg.class,
                         this::evaluateCar
+                )
+                .match(
+                        TransportCoordination.SelectCarMsg.class,
+                        this::selectCar
                 )
                 .match(
                         TransportCoordination.CarBookingConfirmedMsg.class,
