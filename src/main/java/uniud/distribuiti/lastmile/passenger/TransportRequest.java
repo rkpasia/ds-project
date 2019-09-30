@@ -41,6 +41,8 @@ public class TransportRequest extends AbstractActor {
     private void evaluateCar(TransportCoordination msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
+        // TODO: Implementazione più sofisticata della memoria
+
         // Considerare la creazione di un oggetto tupla <CarRef, CarType, EstTransTime>
         // - EstTransTime tempo di trasporto stimato
         availableCars.add(getSender());
@@ -48,6 +50,13 @@ public class TransportRequest extends AbstractActor {
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
     private void selectCar(TransportCoordination msg){
+        // Con la strategia sottostante il software sarà molto flessibile perché permetterà l'implementazione
+        // di tecniche di selezione più sofisticate.
+        // TODO: Gestione della priorità di selezione.
+        //  - ordinamento per più veloce
+        //  - selezione per tipo più veloce
+        //  - non valuterei l'inserimento di altre tipologie di selezioni al momento
+
         // Scelgo sempre la prima macchina che mi ha risposto per il trasporto
         log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
         availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
