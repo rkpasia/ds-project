@@ -50,6 +50,7 @@ public class Car extends AbstractActor {
     private Location location;
     private Double fuel; // Carburante in litri
     private final Double kmPerLiter = 14.0;
+    private Route route;
 
     public Car(){
         this.status = CarStatus.AVAILABLE;
@@ -64,25 +65,17 @@ public class Car extends AbstractActor {
 
     private void evaluateRequest(TransportRequestMessage msg){
         System.out.println("VALUTAZIONE " + msg.toString());
-        Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
-        System.out.println(this.fuel);
-        if(haveEnoughFuel(route.distance)){
+        this.route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+        if(haveEnoughFuel(this.route.distance)){
             System.out.println("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            System.out.println(this.fuel);
-            getContext().actorOf(TransportRequestMngr.props(getSender()), "CarTransportRequestManager");
+            getContext().actorOf(TransportRequestMngr.props(getSender()), getSender().path().name() + "CarTransportRequestManager");
         }
     }
 
     private boolean haveEnoughFuel(int km){
-        double fuelConsumption = km / kmPerLiter;
+        double fuelConsumption = km / this.kmPerLiter;
         double elapsedFuel = this.fuel - fuelConsumption;
-        boolean enough = (elapsedFuel) < 0 ? false : true;
-        if(enough){
-            this.fuel = elapsedFuel;
-            return true;
-        } else {
-            return false;
-        }
+        return (elapsedFuel) < 0 ? false : true;
     }
 
     @Override
