@@ -21,7 +21,23 @@ public class Car extends AbstractActor {
     }
 
     // TODO: Verificare se ci sono altri serializzatori migliori
-    public static class TransportRequestMessage implements Serializable {}
+    public static class TransportRequestMessage implements Serializable {
+        private final int destination;
+        private final int passengerLocation;
+
+        public TransportRequestMessage(int passengerLocation, int dest){
+            this.passengerLocation = passengerLocation;
+            this.destination = dest;
+        }
+
+        public int getDestination(){
+            return this.destination;
+        }
+
+        public int getPassengerLocation(){
+            return this.passengerLocation;
+        }
+    }
 
     private CarStatus status;
     private enum CarStatus {
@@ -31,18 +47,38 @@ public class Car extends AbstractActor {
     }
 
     private Location location;
+    private Double fuel; // Carburante in litri
+    private final Double kmPerLiter = 14.0;
 
     public Car(){
         this.status = CarStatus.AVAILABLE;
         ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
 
+        // Inizializzazione standard carburante macchina
+        this.fuel = 20.0;
         this.location = LocationHelper.assignLocation();
     }
 
     private void evaluateRequest(TransportRequestMessage msg){
         System.out.println("VALUTAZIONE " + msg.toString());
-        getContext().actorOf(TransportRequestMngr.props(getSender()), "CarTransportRequestManager");
+        Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+        if(haveEnoughFuel(route.distance)){
+            System.out.println("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
+            getContext().actorOf(TransportRequestMngr.props(getSender()), "CarTransportRequestManager");
+        }
+    }
+
+    private boolean haveEnoughFuel(int km){
+        double fuelConsumption = km / kmPerLiter;
+        double elapsedFuel = this.fuel - fuelConsumption;
+        boolean enough = (elapsedFuel) < 0 ? false : true;
+        if(enough){
+            this.fuel = elapsedFuel;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

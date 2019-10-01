@@ -39,7 +39,9 @@ public class Passenger extends AbstractActor {
     // Inoltro richiesta con riferimento all attore figlio gestore della mia richiesta
     private void emitTransportRequest(EmitRequestMessage msg){
         transportRequest = getContext().actorOf(TransportRequest.props(), "PassengerTransportRequest");
-        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage()), transportRequest);
+
+        // In questo momento tutti i passeggeri vogliono andare al nodo 0
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
     }
 
     private void selectCar(SelectCarMessage msg){
