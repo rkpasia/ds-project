@@ -9,7 +9,7 @@ import com.typesafe.config.ConfigFactory;
 
 import uniud.distribuiti.lastmile.car.Car;
 import uniud.distribuiti.lastmile.cluster.ClusterEventsListener;
-import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.LocationHelper;
 import uniud.distribuiti.lastmile.passenger.Passenger;
 
 import java.io.FileNotFoundException;
@@ -39,11 +39,12 @@ public class LastMile {
     }
     passenger.tell("RICHIESTA", null);
 
-    Location loc = new Location();
+    LocationHelper loc = new LocationHelper();
 
-    Location.shortestPath(0,4);
-    Location.printDistance();
-    Location.printPath();
+    loc.shortestPathToDestination(0,8,5);
+
+    System.out.println("Distance " + loc.getDistance());
+    System.out.println("Path " +loc.getPath());
 
     /*car.tell("RICHIESTA", passenger);
     car.tell("RICHIESTA", passenger);
