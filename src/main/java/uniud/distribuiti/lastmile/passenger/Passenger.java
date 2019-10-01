@@ -22,7 +22,7 @@ public class Passenger extends AbstractActor {
 
     public static class SelectCarMessage {}
 
-    ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
+    private ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     private ActorRef transportRequest;
 
