@@ -1,37 +1,30 @@
 package uniud.distribuiti.lastmile.location;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class TransportRoute {
 
     private ArrayList<Integer> path;
     private int currentNode;
-    private int nextNode;
+    private Iterator pathIterator;
+
+    public TransportRoute(ArrayList<Integer> thePath){
+        this.path = thePath;
+        this.pathIterator = path.iterator();
+        this.currentNode = (int)pathIterator.next();
+    }
 
     public int getCurrentNode() {
         return currentNode;
     }
 
-    public int getNextNode(){
-        return nextNode;
-    }
-
-    public TransportRoute(ArrayList<Integer> thePath){
-        this.path = thePath;
-        currentNode = this.path.get(0);
-        nextNode = this.path.get(1);
-    }
-
-    public void next(){
-        if(this.path.size() >= 3){
-            currentNode = nextNode;
-            nextNode = path.get(2);
-            path.remove(0);
+    public boolean goToNext(){
+        if(pathIterator.hasNext()){
+            this.currentNode = (int)pathIterator.next();
+            return true;
+        } else {
+            return false;
         }
-        else if(this.path.size() == 2){
-            currentNode = nextNode;
-            path.remove(0);
-        }
-
     }
 }
