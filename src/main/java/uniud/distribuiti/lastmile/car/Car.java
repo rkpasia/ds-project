@@ -7,6 +7,9 @@ import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.LocationHelper;
+
 import java.io.Serializable;
 
 public class Car extends AbstractActor {
@@ -20,18 +23,21 @@ public class Car extends AbstractActor {
     // TODO: Verificare se ci sono altri serializzatori migliori
     public static class TransportRequestMessage implements Serializable {}
 
+    private CarStatus status;
     private enum CarStatus {
         AVAILABLE,
         MATCHED,
         TRANSIT
     }
 
-    private CarStatus status;
+    private Location location;
 
     public Car(){
         this.status = CarStatus.AVAILABLE;
         ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
+
+        this.location = LocationHelper.assignLocation();
     }
 
     private void evaluateRequest(TransportRequestMessage msg){

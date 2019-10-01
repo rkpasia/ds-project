@@ -42,7 +42,7 @@ public class LocationHelper {
         return this.path;
     }
 
-    public Location getMyLocation(){
+    public static Location assignLocation(){
         int dim = graph[0].length;
         return  new Location(new Random().nextInt(dim));
     }
