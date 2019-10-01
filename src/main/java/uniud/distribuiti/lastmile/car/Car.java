@@ -58,14 +58,17 @@ public class Car extends AbstractActor {
 
         // Inizializzazione standard carburante macchina
         this.fuel = 20.0;
-        this.location = LocationHelper.assignLocation();
+        LocationHelper locationHelper = new LocationHelper();
+        this.location = locationHelper.assignLocation();
     }
 
     private void evaluateRequest(TransportRequestMessage msg){
         System.out.println("VALUTAZIONE " + msg.toString());
         Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+        System.out.println(this.fuel);
         if(haveEnoughFuel(route.distance)){
             System.out.println("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
+            System.out.println(this.fuel);
             getContext().actorOf(TransportRequestMngr.props(getSender()), "CarTransportRequestManager");
         }
     }

@@ -31,7 +31,8 @@ public class Passenger extends AbstractActor {
     private Location location;
 
     public Passenger(){
-        this.location = LocationHelper.assignLocation();
+        LocationHelper locationHelper = new LocationHelper();
+        this.location = locationHelper.assignLocation();
     }
 
     // Inoltro richiesta di trasporto

@@ -11,30 +11,27 @@ public class LocationHelper {
 
     private static final int NO_PARENT = -1;
 
-    private static int[][]  graph = null;
+    private static int[][] graph;
 
+    public LocationHelper() {
+        this.setupGraph();
+    }
 
-
-    public LocationHelper() throws FileNotFoundException {
-
+    private void setupGraph(){
         ClassLoader classLoader = getClass().getClassLoader();
-
         InputStream inputStream = classLoader.getResourceAsStream("graph.txt");
-
         Scanner scan = new Scanner(inputStream);
         int row = scan.nextInt();
         graph = new int[row][row];
         for(int r=0; r<row; ++r) {
             for (int c = 0; c < row; ++c) {
                 graph[r][c] = scan.nextInt();
-
             }
         }
     }
 
-
     public static Location assignLocation(){
-        int dim = graph[0].length;
+        int dim = LocationHelper.graph[0].length;
         return  new Location(new Random().nextInt(dim));
     }
 
