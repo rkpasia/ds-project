@@ -1,7 +1,5 @@
 package uniud.distribuiti.lastmile.location;
 
-import scala.Int;
-
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.*;
@@ -14,8 +12,8 @@ public class LocationHelper {
     private static final int NO_PARENT = -1;
 
     private static int[][]  graph = null;
-    private int distance;
-    private ArrayList<Integer> path = new ArrayList<Integer>();
+
+
 
     public LocationHelper() throws FileNotFoundException {
 
@@ -34,20 +32,13 @@ public class LocationHelper {
         }
     }
 
-    public int getDistance(){
-        return this.distance;
-    }
-
-    public ArrayList<Integer> getPath() {
-        return this.path;
-    }
 
     public static Location assignLocation(){
         int dim = graph[0].length;
         return  new Location(new Random().nextInt(dim));
     }
 
-    private void shortestPath  (int startVertex, int finalVertex) {
+    private static Route shortestPath  (int startVertex, int finalVertex) {
         int nVertices = graph[0].length;
 
         int[] shortestDistances = new int[nVertices];
@@ -95,32 +86,36 @@ public class LocationHelper {
             }
         }
 
-        this.distance = shortestDistances[finalVertex];
 
-        this.path = new ArrayList<Integer>();
-        makePath(finalVertex,parents);
+
+        int dist = shortestDistances[finalVertex];
+        ArrayList<Integer> path = makePath(finalVertex,parents);
+
+        return new  Route(dist,path);
     }
 
-    private  void makePath(int startVertex,
+    private static ArrayList<Integer> makePath(int startVertex,
                                   int[] parents)
     {
+        ArrayList<Integer> partialPath = new ArrayList<Integer>();
+
         if (startVertex == NO_PARENT)
         {
-            return;
+            return partialPath;
         }
-        makePath(parents[startVertex], parents);
-        this.path.add(startVertex);
+        partialPath.add(startVertex);
+        partialPath.addAll(makePath(parents[startVertex], parents));
+        return  partialPath;
     }
 
-    public void shortestPathToDestination(int myVertex,int passengerVertex, int toVertex){
-        this.shortestPath(myVertex,passengerVertex);
-        int partialDistance = distance;
-        ArrayList<Integer> partialPath = path;
-        partialPath.remove(partialPath.size()-1);
-        this.shortestPath(passengerVertex,toVertex);
-        distance += partialDistance;
-        partialPath.addAll(path);
-        path = partialPath;
+    public static Route defineRoute(int myVertex,int passengerVertex, int toVertex){
+        Route firstRoute = shortestPath(myVertex,passengerVertex);
+        Route secondRoute = shortestPath(passengerVertex,toVertex);
+
+        int distance = firstRoute.distance+secondRoute.distance;
+        ArrayList<Integer> path = firstRoute.path;
+        path.addAll(secondRoute.path);
+        return new Route(distance,path);
     }
 
 }

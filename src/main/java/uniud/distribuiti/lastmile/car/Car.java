@@ -8,6 +8,7 @@ import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
 
 import java.io.Serializable;
