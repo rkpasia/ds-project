@@ -10,12 +10,15 @@ import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
+import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.io.Serializable;
 
 public class Car extends AbstractActor {
 
     private LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+
+    public static class RequestStatusMsg {}
 
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
@@ -41,9 +44,9 @@ public class Car extends AbstractActor {
     }
 
     private CarStatus status;
-    private enum CarStatus {
+    public enum CarStatus {
         AVAILABLE,
-        MATCHED,
+        BOOKED,
         TRANSIT
     }
 
@@ -61,6 +64,20 @@ public class Car extends AbstractActor {
         this.fuel = 20.0;
         LocationHelper locationHelper = new LocationHelper();
         this.location = locationHelper.assignLocation();
+    }
+
+    private void carBooking(TransportCoordination msg){
+
+        log.info("RICEVUTA RICHIESTA DI BOOKING");
+
+        if(this.status == CarStatus.AVAILABLE) {
+            log.info("SONO DISPONIBILE");
+            this.status = CarStatus.BOOKED;
+            getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
+        } else {
+            log.info("NON SONO DISPONIBILE");
+            getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());
+        }
     }
 
     private void evaluateRequest(TransportRequestMessage msg){
@@ -81,21 +98,10 @@ public class Car extends AbstractActor {
     @Override
     public Receive createReceive(){
         return receiveBuilder()
-                .match(
-                        String.class,
-                        s -> {
-                            log.info("Ricevuto {} da {}", s, getSender());
-                            if(this.status == CarStatus.AVAILABLE){
-                                getSender().tell("DISPONIBILE", getSelf());
-                                this.status = CarStatus.MATCHED;
-                            } else {
-                                log.info("NON DISPONIBILE");
-                            }
-
-                        })
-                .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("subscribed"))
+                .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("ISCRITTO RICEZIONE RICHIESTE"))
+                .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportRequestMessage.class, this::evaluateRequest)
-                .matchAny(o -> log.info("Messaggio non conosciuto"))
+                .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }
 

@@ -3,6 +3,8 @@ package uniud.distribuiti.lastmile.car;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // Transport Request Manager acotr
@@ -11,6 +13,8 @@ import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordina
 // - valuta la disponibilita della macchiana a soddisfare la richiesta
 // - controlla distanza
 public class TransportRequestMngr extends AbstractActor {
+
+    private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
     // Riferimento ad attore per coordinamento richiesta di trasporto
     private ActorRef transportRequest;
@@ -51,8 +55,22 @@ public class TransportRequestMngr extends AbstractActor {
         //  Questo metodo verifica che la macchina sia disponibile
         //  successivamente risponde con la disponibilità
 
-        // supponiamo che al momento la disponibilità sia confermata
-        transportRequest.tell(new TransportCoordination.CarBookingConfirmedMsg(), getContext().getParent());
+        log.info("GESTIONE BOOKING");
+
+        if(msg instanceof TransportCoordination.CarBookingRequestMsg) {
+            log.info("INOLTRO RICHIESTA A MACCHINA");
+            getContext().getParent().tell(msg, getSelf());
+        }
+
+        if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
+            log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
+            transportRequest.tell(msg, getContext().getParent());
+        }
+
+        if(msg instanceof TransportCoordination.CarBookingRejectMsg){
+            log.info("RICEVUTA DISDETTA DA MACCHINA, RISPONDO A PASSEGGERO");
+            transportRequest.tell(msg, getSelf());
+        }
     }
 
     @Override
@@ -60,6 +78,10 @@ public class TransportRequestMngr extends AbstractActor {
         return receiveBuilder()
                 .match(
                         TransportCoordination.CarBookingRequestMsg.class,
+                        this::manageBookingRequest
+                )
+                .match(
+                        TransportCoordination.CarBookingConfirmedMsg.class,
                         this::manageBookingRequest
                 )
                 .matchAny(

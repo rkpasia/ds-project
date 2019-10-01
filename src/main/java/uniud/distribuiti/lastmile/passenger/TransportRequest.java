@@ -71,6 +71,11 @@ public class TransportRequest extends AbstractActor {
         log.info("MACCHINA PRENOTATA {}", getSender());
     }
 
+    // Metodo che disdice il booking di una macchina
+    private void bookingRejected(TransportCoordination msg){
+        log.info("PRENOTAZIONE MACCHINA RIFIUTATA {}", getSender());
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -85,6 +90,10 @@ public class TransportRequest extends AbstractActor {
                 .match(
                         TransportCoordination.CarBookingConfirmedMsg.class,
                         this::bookingConfirmation
+                )
+                .match(
+                        TransportCoordination.CarBookingRejectMsg.class,
+                        this::bookingRejected
                 )
                 .matchAny(
                         o -> {
