@@ -8,6 +8,8 @@ import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.car.Car;
+import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.LocationHelper;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 public class Passenger extends AbstractActor {
@@ -26,7 +28,11 @@ public class Passenger extends AbstractActor {
 
     private ActorRef transportRequest;
 
-    public Passenger(){}
+    private Location location;
+
+    public Passenger(){
+        this.location = LocationHelper.assignLocation();
+    }
 
     // Inoltro richiesta di trasporto
     // Inizializzo nuovo attore
