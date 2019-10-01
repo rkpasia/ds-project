@@ -50,11 +50,11 @@ public class TransportRequestMngr extends AbstractActor {
         transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
     }
 
+    // Metodo di gestione e forwarding della richiesta di prenotazione
+    // Il metodo riceve e fa da intermediario con il TransportRequest del passeggero per confermare la prenotazione
+    // della macchina. Se non riesce, viene mandato un messaggio di rifiuto prenotazione, che dovrà essere gestito
+    // dal TransportRequest del passeggero.
     private void manageBookingRequest(TransportCoordination msg){
-        // TODO: Verifica disponibilità a prenotare la macchina
-        //  Questo metodo verifica che la macchina sia disponibile
-        //  successivamente risponde con la disponibilità
-
         log.info("GESTIONE BOOKING");
 
         if(msg instanceof TransportCoordination.CarBookingRequestMsg) {
@@ -64,11 +64,13 @@ public class TransportRequestMngr extends AbstractActor {
 
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
+            this.status = RequestManagerStatus.AVAILABLE;
             transportRequest.tell(msg, getContext().getParent());
         }
 
         if(msg instanceof TransportCoordination.CarBookingRejectMsg){
             log.info("RICEVUTA DISDETTA DA MACCHINA, RISPONDO A PASSEGGERO");
+            this.status = RequestManagerStatus.NOT_AVAILABLE;
             transportRequest.tell(msg, getSelf());
         }
     }
