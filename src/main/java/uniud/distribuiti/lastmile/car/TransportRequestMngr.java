@@ -36,6 +36,7 @@ public class TransportRequestMngr extends AbstractActor {
     public TransportRequestMngr(ActorRef transportRequest){
         this.transportRequest = transportRequest;
         this.status = RequestManagerStatus.WAITING;
+        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
