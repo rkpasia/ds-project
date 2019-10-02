@@ -61,6 +61,12 @@ public class TransportRequestMngr extends AbstractActor {
             this.status = RequestManagerStatus.NOT_AVAILABLE;
             transportRequest.tell(msg, getSelf());
         }
+
+        if(msg instanceof TransportCoordination.CarHasBeenBooked){
+            log.info("RICEVUTA NOTIFICA DA MACCHINA DI UNA PRENOTAZIONE DA UN ALTRO PASSEGGERO");
+            this.status = RequestManagerStatus.NOT_AVAILABLE;
+            transportRequest.tell(msg, getSelf());
+        }
     }
 
     @Override
@@ -72,6 +78,10 @@ public class TransportRequestMngr extends AbstractActor {
                 )
                 .match(
                         TransportCoordination.CarBookingConfirmedMsg.class,
+                        this::manageBookingRequest
+                )
+                .match(
+                        TransportCoordination.CarHasBeenBooked.class,
                         this::manageBookingRequest
                 )
                 .matchAny(
