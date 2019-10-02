@@ -80,11 +80,12 @@ public class Car extends AbstractActor {
         }
     }
 
+    // Metodo di valutazione della richiesta di trasporto
     private void evaluateRequest(TransportRequestMessage msg){
-        System.out.println("VALUTAZIONE " + msg.toString());
+        log.info("VALUTAZIONE " + msg.toString());
         this.route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
         if(haveEnoughFuel(this.route.distance)){
-            System.out.println("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
+            log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
             getContext().actorOf(TransportRequestMngr.props(getSender()), getSender().path().name() + "CarTransportRequestManager");
         }
     }

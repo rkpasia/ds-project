@@ -21,7 +21,7 @@ public class TransportRequestMngr extends AbstractActor {
 
     private RequestManagerStatus status;
     private enum RequestManagerStatus {
-        EVALUATION,         // Valutazione richiesta
+        WAITING,            // In attesa di conferma da parte del passeggero
         AVAILABLE,          // Macchina disponibile
         NOT_AVAILABLE,      // Macchina non disponibile
         EXPIRED,            // Si presume che la macchina non venga più considerata dal passeggero
@@ -35,19 +35,7 @@ public class TransportRequestMngr extends AbstractActor {
 
     public TransportRequestMngr(ActorRef transportRequest){
         this.transportRequest = transportRequest;
-        this.status = RequestManagerStatus.EVALUATION;
-        this.transportRequestEvaluation();
-    }
-
-    // Metodo di valutazione della richiesta di trasporto
-    private void transportRequestEvaluation(){
-        // TODO: Implementazione valutazione della richiesta
-        //  - considerare la posizione del passeggero
-        //  - considerare il carburante a disposizione del mio parent
-        //  - formulazione di una risposta per la richiesta (anche in caso negativo?)
-        
-        // Risposta fake di disponibilità
-        transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
+        this.status = RequestManagerStatus.WAITING;
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
