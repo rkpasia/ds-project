@@ -19,6 +19,9 @@ public class TransportCoordination implements Serializable {
     // Messaggio di richiesta prenotazione macchina da parte del passeggero
     public static class CarBookingRequestMsg extends TransportCoordination {}
 
+    // Messaggio di notifica che la macchina è stata prenotata da un altro passeggero
+    public static class CarHasBeenBooked extends TransportCoordination {}
+
     // Messaggio conferma il booking di una macchina
     public static class CarBookingConfirmedMsg extends TransportCoordination {}
 
