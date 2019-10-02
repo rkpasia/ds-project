@@ -100,8 +100,8 @@ public class LocationHelper {
         {
             return partialPath;
         }
-        partialPath.add(startVertex);
         partialPath.addAll(makePath(parents[startVertex], parents));
+        partialPath.add(startVertex);
         return  partialPath;
     }
 
@@ -111,6 +111,7 @@ public class LocationHelper {
 
         int distance = firstRoute.distance+secondRoute.distance;
         ArrayList<Integer> path = firstRoute.path;
+        secondRoute.path.remove(0);
         path.addAll(secondRoute.path);
         return new Route(distance,path);
     }
