@@ -40,20 +40,24 @@ public class LastMile {
   }
 
   private static ActorRef setSinglePassenger(){
+  private static ActorRef setSinglePassenger(String name){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
     Config config = ConfigFactory.load();
     // Inizializzazione nuova gerarchia di attori - PASSEGGERO
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
     return syst.actorOf(Passenger.props(), "Passenger");
+    return syst.actorOf(Passenger.props(), name);
   }
 
   private static ActorRef setSingleCar(){
+  private static ActorRef setSingleCar(String name){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
     Config config = ConfigFactory.load();
     // Inizializzazione nuova gerarchia di attori - MACCHINA
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
     return syst.actorOf(Car.props(), "Car");
+    return syst.actorOf(Car.props(), name);
   }
 }
