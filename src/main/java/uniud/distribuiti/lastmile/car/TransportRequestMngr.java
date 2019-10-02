@@ -6,6 +6,7 @@ import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Route;
+import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // Transport Request Manager acotr
@@ -58,6 +59,7 @@ public class TransportRequestMngr extends AbstractActor {
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
             this.status = RequestManagerStatus.AVAILABLE;
+            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route))));
             transportRequest.tell(msg, getContext().getParent());
         }
 

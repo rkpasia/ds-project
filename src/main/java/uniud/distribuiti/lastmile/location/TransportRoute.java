@@ -5,13 +5,13 @@ import java.util.Iterator;
 
 public class TransportRoute {
 
-    private ArrayList<Integer> path;
+    private Route route;
     private int currentNode;
     private Iterator pathIterator;
 
-    public TransportRoute(ArrayList<Integer> thePath){
-        this.path = thePath;
-        this.pathIterator = path.iterator();
+    public TransportRoute(Route route){
+        this.route = route;
+        this.pathIterator = route.getPath().iterator();
         this.currentNode = (int)pathIterator.next();
     }
 

@@ -35,7 +35,7 @@ public class LocationHelper {
         return  new Location(new Random().nextInt(dim));
     }
 
-    private static Route shortestPath  (int startVertex, int finalVertex) {
+    public static Route shortestPath  (int startVertex, int finalVertex) {
         int nVertices = graph[0].length;
 
         int[] shortestDistances = new int[nVertices];
@@ -105,11 +105,11 @@ public class LocationHelper {
         return  partialPath;
     }
 
-    public static Route defineRoute(int myVertex,int passengerVertex, int toVertex){
+    public static Route defineRoute(int myVertex, int passengerVertex, int toVertex){
         Route firstRoute = shortestPath(myVertex,passengerVertex);
         Route secondRoute = shortestPath(passengerVertex,toVertex);
 
-        int distance = firstRoute.getDistance()+secondRoute.getDistance();
+        int distance = firstRoute.getDistance() + secondRoute.getDistance();
         ArrayList<Integer> path = firstRoute.getPath();
         secondRoute.getPath().remove(0);
         path.addAll(secondRoute.getPath());
