@@ -53,7 +53,6 @@ public class Car extends AbstractActor {
     private Location location;
     private Double fuel; // Carburante in litri
     private final Double kmPerLiter = 14.0;
-    private Route route;
 
     public Car(){
         this.status = CarStatus.AVAILABLE;
@@ -83,10 +82,10 @@ public class Car extends AbstractActor {
     // Metodo di valutazione della richiesta di trasporto
     private void evaluateRequest(TransportRequestMessage msg){
         log.info("VALUTAZIONE " + msg.toString());
-        this.route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
-        if(haveEnoughFuel(this.route.distance)){
+        Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+        if(haveEnoughFuel(route.getDistance())){
             log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            getContext().actorOf(TransportRequestMngr.props(getSender()), getSender().path().name() + "CarTransportRequestManager");
+            getContext().actorOf(TransportRequestMngr.props(getSender(), route), getSender().path().name() + "CarTransportRequestManager");
         }
     }
 

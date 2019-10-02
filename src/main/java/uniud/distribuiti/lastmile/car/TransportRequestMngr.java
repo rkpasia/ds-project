@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // Transport Request Manager acotr
@@ -29,12 +30,16 @@ public class TransportRequestMngr extends AbstractActor {
         CONFIRMED,          // Macchina è stata confermata dal passeggero
     }
 
-    public static Props props(ActorRef transportRequest){
-        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest));
+    // Percorso che dovrà fare la macchina
+    private Route route;
+
+    public static Props props(ActorRef transportRequest, Route route){
+        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest, route));
     }
 
-    public TransportRequestMngr(ActorRef transportRequest){
+    public TransportRequestMngr(ActorRef transportRequest, Route route){
         this.transportRequest = transportRequest;
+        this.route = route;
         this.status = RequestManagerStatus.WAITING;
     }
 
