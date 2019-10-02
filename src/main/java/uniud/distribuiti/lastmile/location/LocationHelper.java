@@ -109,9 +109,9 @@ public class LocationHelper {
         Route firstRoute = shortestPath(myVertex,passengerVertex);
         Route secondRoute = shortestPath(passengerVertex,toVertex);
 
-        int distance = firstRoute.distance+secondRoute.distance;
-        ArrayList<Integer> path = firstRoute.path;
-        path.addAll(secondRoute.path);
+        int distance = firstRoute.getDistance()+secondRoute.getDistance();
+        ArrayList<Integer> path = firstRoute.getPath();
+        path.addAll(secondRoute.getPath());
         return new Route(distance,path);
     }
 
