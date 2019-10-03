@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
@@ -33,14 +34,16 @@ public class TransportRequestMngr extends AbstractActor {
 
     // Percorso che dovrà fare la macchina
     private Route route;
+    private Location passengerLocation;     // Location del passeggero
 
-    public static Props props(ActorRef transportRequest, Route route){
-        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest, route));
+    public static Props props(ActorRef transportRequest, Route route, Location passengerLocation){
+        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest, route, passengerLocation));
     }
 
-    public TransportRequestMngr(ActorRef transportRequest, Route route){
+    public TransportRequestMngr(ActorRef transportRequest, Route route, Location passengerLocation){
         this.transportRequest = transportRequest;
         this.route = route;
+        this.passengerLocation = passengerLocation;
         this.status = RequestManagerStatus.WAITING;
         this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
     }
