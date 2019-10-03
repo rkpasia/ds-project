@@ -50,7 +50,6 @@ public class Passenger extends AbstractActor {
         transportRequest.tell(new TransportCoordination.SelectCarMsg(), getSelf());
     }
 
-    private void carArrived(CarArrivedMessage msg){
     private void carArrived(TransportCoordination msg){
         this.car = getSender();     // Riferimento alla macchina che mi sta trasportando
         // Passenger is now in transit
