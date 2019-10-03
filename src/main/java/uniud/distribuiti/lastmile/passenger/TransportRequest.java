@@ -46,11 +46,16 @@ public class TransportRequest extends AbstractActor {
         // Considerare la creazione di un oggetto tupla <CarRef, CarType, EstTransTime>
         // - EstTransTime tempo di trasporto stimato
         availableCars.add(getSender());
+
+        //TEST provo a prenotare la macchina
+        selectCar(msg);
+
     }
 
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
+        if(availableCars.contains(getSender()))
         availableCars.remove(getSender());
     }
 
@@ -65,7 +70,9 @@ public class TransportRequest extends AbstractActor {
 
         // Scelgo sempre la prima macchina che mi ha risposto per il trasporto
         log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
-        availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+        // Al fine di testare il sistema facciamo che per ogni proposta il passeggero prova a prenotare
+        getSender().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+        //availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
     }
 
     // Metodo che riceve la conferma della prenotazione di una macchina
@@ -79,7 +86,10 @@ public class TransportRequest extends AbstractActor {
 
     // Metodo che disdice il booking di una macchina
     private void bookingRejected(TransportCoordination msg){
-        log.info("PRENOTAZIONE MACCHINA RIFIUTATA {}", getSender());
+        log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
+
+        if(availableCars.contains(getSender()))
+        availableCars.remove(getSender());
     }
 
     @Override
