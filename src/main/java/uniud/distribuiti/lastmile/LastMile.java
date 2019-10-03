@@ -26,8 +26,8 @@ public class LastMile {
 
 
 
-    ActorRef passenger = setSinglePassenger();
-    ActorRef car = setSingleCar();
+    ActorRef passenger = setSinglePassenger("PASSEGGERO1");
+    ActorRef car = setSingleCar("MACCHINA1");
 
     try {
       Thread.sleep(10000);
@@ -36,28 +36,32 @@ public class LastMile {
     }
 
     passenger.tell(new Passenger.EmitRequestMessage(), null);
+
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    passenger.tell(new Passenger.SelectCarMessage(), null);
     
   }
 
-  private static ActorRef setSinglePassenger(){
   private static ActorRef setSinglePassenger(String name){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
     Config config = ConfigFactory.load();
     // Inizializzazione nuova gerarchia di attori - PASSEGGERO
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
-    return syst.actorOf(Passenger.props(), "Passenger");
     return syst.actorOf(Passenger.props(), name);
   }
 
-  private static ActorRef setSingleCar(){
   private static ActorRef setSingleCar(String name){
     // Configurazione nuovo nodo con nuovo ActorSystem e attore principale Passeggero
     Config config = ConfigFactory.load();
     // Inizializzazione nuova gerarchia di attori - MACCHINA
     ActorSystem syst = ActorSystem.create("ClusterSystem", config);
     // Instanziazione di un nuovo attore Passeggero
-    return syst.actorOf(Car.props(), "Car");
     return syst.actorOf(Car.props(), name);
   }
 }
