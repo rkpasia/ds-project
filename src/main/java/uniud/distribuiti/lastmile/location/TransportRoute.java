@@ -27,4 +27,8 @@ public class TransportRoute {
             return false;
         }
     }
+
+    public Route getRoute(){
+        return this.route;
+    }
 }
