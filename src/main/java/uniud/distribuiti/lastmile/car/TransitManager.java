@@ -12,7 +12,11 @@ public class TransitManager extends AbstractActor {
         return Props.create(TransitManager.class, () -> new TransitManager(route));
     }
 
-    public TransitManager(TransportRoute route){}
+    private final TransportRoute route;
+
+    public TransitManager(TransportRoute route){
+        this.route = route;
+    }
 
     @Override
     public Receive createReceive(){
