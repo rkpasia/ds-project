@@ -8,6 +8,10 @@ import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+
 
 // TransportRequest actor
 // Questo è l'attore responsabile della gestione di una richiesta
@@ -23,7 +27,33 @@ public class TransportRequest extends AbstractActor {
         CONFIRMED
     }
 
-    private ArrayList<ActorRef> availableCars = new ArrayList<ActorRef>();
+    private static class CarInformation{
+        private TransportCoordination.CarAvailableMsg msg;
+        private ActorRef transportRequestManager;
+
+        public CarInformation(TransportCoordination.CarAvailableMsg msg, ActorRef transportRequestManager){
+
+            this.msg =msg;
+            this.transportRequestManager = transportRequestManager;
+        }
+
+        public TransportCoordination.CarAvailableMsg getMsg() {
+            return msg;
+        }
+
+        public ActorRef getTransportRequestManager() {
+            return transportRequestManager;
+        }
+    }
+    private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
+    class SortByEstTransTime implements Comparator<CarInformation>
+    {
+
+        public int compare(CarInformation a, CarInformation b)
+        {
+            return a.msg.getEstTransTime() - b.msg.getEstTransTime();
+        }
+    }
 
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
@@ -38,41 +68,36 @@ public class TransportRequest extends AbstractActor {
         System.out.println("TRANSPORT REQUEST STARTED");
     }
 
-    private void evaluateCar(TransportCoordination msg){
+    private void evaluateCar(TransportCoordination.CarAvailableMsg msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
-        // TODO: Implementazione più sofisticata della memoria
+        //Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
+        // e le info della macchina
+        availableCars.add(new CarInformation(msg,getSender()));
 
-        // Considerare la creazione di un oggetto tupla <CarRef, CarType, EstTransTime>
-        // - EstTransTime tempo di trasporto stimato
-        availableCars.add(getSender());
-
-        //TEST provo a prenotare la macchina
-        selectCar(msg);
-
+        // TODO come passo dalla evaluate car alla select ... devo aspettare un po prima di scegliere
     }
 
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
-        if(availableCars.contains(getSender()))
-        availableCars.remove(getSender());
+        // rimuovo la macchina se presente sulla lista
+        for(int i =0; i<availableCars.size(); ++i)
+        {
+            if(availableCars.get(i).transportRequestManager == getSender()){
+                availableCars.remove(i);
+                break;
+            }
+        }
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
     private void selectCar(TransportCoordination msg){
-        // Con la strategia sottostante il software sarà molto flessibile perché permetterà l'implementazione
-        // di tecniche di selezione più sofisticate.
-        // TODO: Gestione della priorità di selezione.
-        //  - ordinamento per più veloce
-        //  - selezione per tipo più veloce
-        //  - non valuterei l'inserimento di altre tipologie di selezioni al momento
-
-        // Scelgo sempre la prima macchina che mi ha risposto per il trasporto
         log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
-        // Al fine di testare il sistema facciamo che per ogni proposta il passeggero prova a prenotare
-        getSender().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
-        //availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+
+        //ordino la lista di macchine disponibili per EstTransTime e prendo il primo
+        Collections.sort(availableCars,new SortByEstTransTime());
+        availableCars.get(0).transportRequestManager.tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
     }
 
     // Metodo che riceve la conferma della prenotazione di una macchina

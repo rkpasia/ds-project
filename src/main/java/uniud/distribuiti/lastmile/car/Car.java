@@ -70,8 +70,6 @@ public class Car extends AbstractActor {
 
         log.info("RICEVUTA RICHIESTA DI BOOKING");
 
-        int  g = 1;
-
         if(this.status == CarStatus.AVAILABLE) {
             log.info("SONO DISPONIBILE");
             this.status = CarStatus.BOOKED;
@@ -91,7 +89,7 @@ public class Car extends AbstractActor {
         this.route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
         if(haveEnoughFuel(this.route.distance)){
             log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            getContext().actorOf(TransportRequestMngr.props(getSender()), getSender().path().name() + "CarTransportRequestManager");
+            getContext().actorOf(TransportRequestMngr.props(getSender(),new TransportCoordination.CarAvailableMsg(this.route.distance)), getSender().path().name() + "CarTransportRequestManager");
         }
     }
 

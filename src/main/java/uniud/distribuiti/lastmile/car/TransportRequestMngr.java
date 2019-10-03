@@ -29,14 +29,14 @@ public class TransportRequestMngr extends AbstractActor {
         CONFIRMED,          // Macchina è stata confermata dal passeggero
     }
 
-    public static Props props(ActorRef transportRequest){
-        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest));
+    public static Props props(ActorRef transportRequest, TransportCoordination.CarAvailableMsg car){
+        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest,car));
     }
 
-    public TransportRequestMngr(ActorRef transportRequest){
+    public TransportRequestMngr(ActorRef transportRequest,TransportCoordination.CarAvailableMsg car){
         this.transportRequest = transportRequest;
         this.status = RequestManagerStatus.WAITING;
-        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
+        this.transportRequest.tell(car, getSelf());
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
