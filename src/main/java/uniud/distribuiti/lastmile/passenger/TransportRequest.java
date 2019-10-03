@@ -48,6 +48,12 @@ public class TransportRequest extends AbstractActor {
         availableCars.add(getSender());
     }
 
+    private void carUnavaiable(TransportCoordination msg){
+        log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
+
+        availableCars.remove(getSender());
+    }
+
     // Selezione di una macchina che ha dato disponibilità al passeggero
     private void selectCar(TransportCoordination msg){
         // Con la strategia sottostante il software sarà molto flessibile perché permetterà l'implementazione
@@ -94,6 +100,10 @@ public class TransportRequest extends AbstractActor {
                 .match(
                         TransportCoordination.CarBookingRejectMsg.class,
                         this::bookingRejected
+                )
+                .match(
+                        TransportCoordination.CarUnavailableMsg.class,
+                        this::carUnavaiable
                 )
                 .matchAny(
                         o -> {
