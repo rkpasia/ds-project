@@ -7,6 +7,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.TransportRoute;
+import uniud.distribuiti.lastmile.passenger.Passenger;
 
 import java.time.Duration;
 
@@ -40,7 +41,7 @@ public class TransitManager extends AbstractActorWithTimers {
         boolean hasNext = this.route.goToNext();        // Gestione comportamento tramite hasNext
 
         if(this.route.getCurrentNode() == this.passengerLocation.getNode()) {
-            // Tell passenger Car è arrivata
+            passenger.tell(new Passenger.CarArrivedMessage(), getContext().parent());
         }
 
         if(!hasNext){

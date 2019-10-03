@@ -24,9 +24,12 @@ public class Passenger extends AbstractActor {
 
     public static class SelectCarMessage {}
 
+    public static class CarArrivedMessage {}
+
     private ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     private ActorRef transportRequest;
+    private ActorRef car;
 
     private Location location;
 
@@ -49,6 +52,11 @@ public class Passenger extends AbstractActor {
         transportRequest.tell(new TransportCoordination.SelectCarMsg(), getSelf());
     }
 
+    private void carArrived(CarArrivedMessage msg){
+        this.car = getSender();     // Riferimento alla macchina che mi sta trasportando
+        // Passenger is now in transit
+    }
+
     @Override
     public Receive createReceive(){
 
@@ -61,6 +69,7 @@ public class Passenger extends AbstractActor {
                 )
                 .match(EmitRequestMessage.class, this::emitTransportRequest)
                 .match(SelectCarMessage.class, this::selectCar)
+                .match(CarArrivedMessage.class, this::carArrived)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }
