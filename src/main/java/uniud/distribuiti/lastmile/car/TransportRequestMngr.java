@@ -83,7 +83,7 @@ public class TransportRequestMngr extends AbstractActor {
     }
 
     private void setupTransitManager(){
-        getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation, this.passengerRef)));
+        getContext().system().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation, this.passengerRef)), "TRANSIT_MANAGER");
     }
 
     @Override
