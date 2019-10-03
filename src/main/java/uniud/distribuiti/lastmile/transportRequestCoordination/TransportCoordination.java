@@ -31,4 +31,10 @@ public class TransportCoordination implements Serializable {
     // Messaggio per richiedere la selezione di una macchina
     public static class SelectCarMsg extends TransportCoordination {}
 
+    // Macchina ha raggiunto la location presso cui si trova il passeggero
+    public static class CarArrivedToPassenger extends TransportCoordination {}
+
+    // Macchina ha raggiunto la destinazione presso cui il passeggero ha richiesto di essere portato
+    public static class DestinationReached extends TransportCoordination {}
+
 }
