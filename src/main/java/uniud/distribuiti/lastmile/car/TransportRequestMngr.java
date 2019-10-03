@@ -63,7 +63,7 @@ public class TransportRequestMngr extends AbstractActor {
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
             this.status = RequestManagerStatus.AVAILABLE;
-            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route))));
+            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation)));
             transportRequest.tell(msg, getContext().getParent());
         }
 
