@@ -36,6 +36,16 @@ public class TransitManager extends AbstractActorWithTimers {
 
     private void goToNext(TransitTick msg){
         boolean hasNext = this.route.goToNext();        // Gestione comportamento tramite hasNext
+
+        if(this.route.getCurrentNode() == this.passengerLocation.getNode()) {
+            // Tell passenger Car è arrivata
+        }
+
+        if(!hasNext){
+            // Tell destinazione raggiunta
+            // Trovare il modo di fermare il timer
+        }
+
         System.out.println(this.route.getCurrentNode());
     }
 
