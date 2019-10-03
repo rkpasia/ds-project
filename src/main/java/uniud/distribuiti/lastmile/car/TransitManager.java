@@ -1,7 +1,7 @@
 package uniud.distribuiti.lastmile.car;
 
-import akka.actor.AbstractActor;
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -14,20 +14,22 @@ import java.time.Duration;
 // di una macchina all'interno della rete geografica
 public class TransitManager extends AbstractActorWithTimers {
 
-    public static Props props(TransportRoute route, Location passengerLocation){
-        return Props.create(TransitManager.class, () -> new TransitManager(route, passengerLocation));
+    public static Props props(TransportRoute route, Location passengerLocation, ActorRef passenger){
+        return Props.create(TransitManager.class, () -> new TransitManager(route, passengerLocation, passenger));
     }
 
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
     private final TransportRoute route;
     private final Location passengerLocation;
+    private final ActorRef passenger;
     private static Object TICK_KEY = "TransportTick";   // Chiave per i timer
     private static final class StartTick {}             // Tick inizio transito
     private static final class TransitTick {}           // Tick di transito
 
-    public TransitManager(TransportRoute route, Location passengerLocation){
+    public TransitManager(TransportRoute route, Location passengerLocation, ActorRef passenger){
         this.route = route;
+        this.passenger = passenger;
         this.passengerLocation = passengerLocation;
         log.info("TRANSIT MANAGER STARTED");
         log.info("ROUTE: " + this.route.getRoute().getPath());

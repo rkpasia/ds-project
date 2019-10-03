@@ -65,7 +65,8 @@ public class TransportRequest extends AbstractActor {
 
         // Scelgo sempre la prima macchina che mi ha risposto per il trasporto
         log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
-        availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+        // Avvisa il manager della richiesta di prenotazione da parte del passeggero
+        availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getContext().getParent());
     }
 
     // Metodo che riceve la conferma della prenotazione di una macchina
