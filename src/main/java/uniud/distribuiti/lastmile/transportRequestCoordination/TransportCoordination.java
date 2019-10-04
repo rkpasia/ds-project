@@ -9,15 +9,15 @@ public class TransportCoordination implements Serializable {
     // Deve contenere informazioni sufficienti per permettere al passeggero
     // di valutare la disponibilità ricevuta
     public static class CarAvailableMsg extends TransportCoordination{
-        // TODO: Sistemare
-        private final int estTransTime;
 
-        public CarAvailableMsg(int estTransTime){
-            this.estTransTime = estTransTime;
+        private final int routeLength;
+
+        public CarAvailableMsg(int routeLength){
+            this.routeLength = routeLength;
         }
 
-        public int getEstTransTime() {
-            return estTransTime;
+        public int getRouteLength() {
+            return routeLength;
         }
 
     }
