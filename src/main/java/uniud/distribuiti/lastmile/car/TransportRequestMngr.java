@@ -29,14 +29,14 @@ public class TransportRequestMngr extends AbstractActor {
         CONFIRMED,          // Macchina è stata confermata dal passeggero
     }
 
-    public static Props props(ActorRef transportRequest, TransportCoordination.CarAvailableMsg car){
-        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest,car));
+    public static Props props(ActorRef transportRequest,  int distance ){
+        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest,distance));
     }
 
-    public TransportRequestMngr(ActorRef transportRequest,TransportCoordination.CarAvailableMsg car){
+    public TransportRequestMngr(ActorRef transportRequest,int distance){
         this.transportRequest = transportRequest;
         this.status = RequestManagerStatus.WAITING;
-        this.transportRequest.tell(car, getSelf());
+        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(distance), getSelf());
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
@@ -88,11 +88,7 @@ public class TransportRequestMngr extends AbstractActor {
                         TransportCoordination.CarBookingRejectMsg.class,
                         this::manageBookingRequest
                 )
-                .matchAny(
-                        o -> {
-
-                        }
-                )
+                .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }
 }

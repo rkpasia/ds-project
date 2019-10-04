@@ -1,8 +1,5 @@
 package uniud.distribuiti.lastmile.transportRequestCoordination;
 
-import akka.actor.ActorRef;
-import uniud.distribuiti.lastmile.car.Car;
-
 import java.io.Serializable;
 
 public class TransportCoordination implements Serializable {

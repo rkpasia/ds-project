@@ -89,7 +89,7 @@ public class Car extends AbstractActor {
         this.route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
         if(haveEnoughFuel(this.route.distance)){
             log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            getContext().actorOf(TransportRequestMngr.props(getSender(),new TransportCoordination.CarAvailableMsg(this.route.distance)), getSender().path().name() + "CarTransportRequestManager");
+            getContext().actorOf(TransportRequestMngr.props(getSender(),route.distance), getSender().path().name() + "CarTransportRequestManager");
         }
     }
 

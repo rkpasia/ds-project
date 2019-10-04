@@ -7,10 +7,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 
 
 // TransportRequest actor
@@ -28,17 +25,17 @@ public class TransportRequest extends AbstractActor {
     }
 
     private static class CarInformation{
-        private TransportCoordination.CarAvailableMsg msg;
+        private int estTransTime;
         private ActorRef transportRequestManager;
 
-        public CarInformation(TransportCoordination.CarAvailableMsg msg, ActorRef transportRequestManager){
+        public CarInformation(int estTransTime, ActorRef transportRequestManager){
 
-            this.msg =msg;
+            this.estTransTime =estTransTime;
             this.transportRequestManager = transportRequestManager;
         }
 
-        public TransportCoordination.CarAvailableMsg getMsg() {
-            return msg;
+        public int  getMsg() {
+            return estTransTime;
         }
 
         public ActorRef getTransportRequestManager() {
@@ -51,7 +48,7 @@ public class TransportRequest extends AbstractActor {
 
         public int compare(CarInformation a, CarInformation b)
         {
-            return a.msg.getEstTransTime() - b.msg.getEstTransTime();
+            return a.estTransTime- b.estTransTime;
         }
     }
 
@@ -73,31 +70,29 @@ public class TransportRequest extends AbstractActor {
 
         //Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
         // e le info della macchina
-        availableCars.add(new CarInformation(msg,getSender()));
+        availableCars.add(new CarInformation(msg.getEstTransTime(),getSender()));
 
-        // TODO come passo dalla evaluate car alla select ... devo aspettare un po prima di scegliere
     }
 
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
         // rimuovo la macchina se presente sulla lista
-        for(int i =0; i<availableCars.size(); ++i)
-        {
-            if(availableCars.get(i).transportRequestManager == getSender()){
-                availableCars.remove(i);
-                break;
-            }
+        for(Iterator<CarInformation> iterator = availableCars.iterator(); iterator.hasNext(); ) {
+            if(iterator.next().transportRequestManager == getSender())
+                iterator.remove();
         }
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
     private void selectCar(TransportCoordination msg){
-        log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
+        log.info("PRENOTO LA MACCHINA {}");
 
         //ordino la lista di macchine disponibili per EstTransTime e prendo il primo
+        if(!availableCars.isEmpty()){
         Collections.sort(availableCars,new SortByEstTransTime());
         availableCars.get(0).transportRequestManager.tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+        }
     }
 
     // Metodo che riceve la conferma della prenotazione di una macchina
