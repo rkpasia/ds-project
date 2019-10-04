@@ -1,8 +1,6 @@
 package uniud.distribuiti.lastmile.transportRequestCoordination;
 
-import uniud.distribuiti.lastmile.car.Car;
 import uniud.distribuiti.lastmile.location.Location;
-
 import java.io.Serializable;
 
 public class TransportCoordination implements Serializable {
@@ -10,7 +8,19 @@ public class TransportCoordination implements Serializable {
     // Messaggio di disponibilità macchina per passeggero
     // Deve contenere informazioni sufficienti per permettere al passeggero
     // di valutare la disponibilità ricevuta
-    public static class CarAvailableMsg extends TransportCoordination{}
+    public static class CarAvailableMsg extends TransportCoordination{
+        // TODO: Sistemare
+        private final int estTransTime;
+
+        public CarAvailableMsg(int estTransTime){
+            this.estTransTime = estTransTime;
+        }
+
+        public int getEstTransTime() {
+            return estTransTime;
+        }
+
+    }
 
     // Messaggio di indisponibilità della macchina
     // Questo può essere inviato attivamente oppure si può lasciare che

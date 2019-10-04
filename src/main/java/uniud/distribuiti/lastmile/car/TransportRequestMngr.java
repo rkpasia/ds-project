@@ -46,7 +46,7 @@ public class TransportRequestMngr extends AbstractActor {
         this.route = route;
         this.passengerLocation = passengerLocation;
         this.status = RequestManagerStatus.WAITING;
-        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(), getSelf());
+        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(route.getDistance()), getSelf());
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
@@ -76,9 +76,9 @@ public class TransportRequestMngr extends AbstractActor {
         }
 
         if(msg instanceof TransportCoordination.CarHasBeenBooked){
-            log.info("RICEVUTA NOTIFICA DA MACCHINA DI UNA PRENOTAZIONE DA UN ALTRO PASSEGGERO");
+            log.info("RICEVUTA NOTIFICA DA MACCHINA DI UNA PRENOTAZIONE DA UN ALTRO PASSEGGERO, RISPONDO A PASSEGGERO");
             this.status = RequestManagerStatus.NOT_AVAILABLE;
-            transportRequest.tell(msg, getSelf());
+            transportRequest.tell(new TransportCoordination.CarUnavailableMsg(), getSelf());
         }
     }
 
@@ -100,12 +100,11 @@ public class TransportRequestMngr extends AbstractActor {
                 .match(
                         TransportCoordination.CarHasBeenBooked.class,
                         this::manageBookingRequest
+                ).match(
+                        TransportCoordination.CarBookingRejectMsg.class,
+                        this::manageBookingRequest
                 )
-                .matchAny(
-                        o -> {
-
-                        }
-                )
+                .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }
 }

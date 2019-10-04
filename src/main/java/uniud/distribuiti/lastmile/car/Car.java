@@ -69,13 +69,13 @@ public class Car extends AbstractActor {
 
         log.info("RICEVUTA RICHIESTA DI BOOKING");
 
-        int  g = 1;
-
         if(this.status == CarStatus.AVAILABLE) {
             log.info("SONO DISPONIBILE");
             this.status = CarStatus.BOOKED;
-            getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
-            getContext().getChildren().forEach(child -> child.tell(new TransportCoordination.CarHasBeenBooked(),getSelf()));
+
+            getContext().getChildren().forEach(child ->{
+                if(child != getSender()) child.tell(new TransportCoordination.CarHasBeenBooked(),getSelf());
+                else getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());});
         } else {
             log.info("NON SONO DISPONIBILE");
             getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());

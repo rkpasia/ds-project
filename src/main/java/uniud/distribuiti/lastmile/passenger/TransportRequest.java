@@ -7,7 +7,8 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
-import java.util.ArrayList;
+import java.util.*;
+
 
 // TransportRequest actor
 // Questo è l'attore responsabile della gestione di una richiesta
@@ -23,7 +24,34 @@ public class TransportRequest extends AbstractActor {
         CONFIRMED
     }
 
-    private ArrayList<ActorRef> availableCars = new ArrayList<ActorRef>();
+    // TODO: Sistemare
+    private static class CarInformation{
+        private int estTransTime;
+        private ActorRef transportRequestManager;
+
+        public CarInformation(int estTransTime, ActorRef transportRequestManager){
+
+            this.estTransTime =estTransTime;
+            this.transportRequestManager = transportRequestManager;
+        }
+
+        public int  getMsg() {
+            return estTransTime;
+        }
+
+        public ActorRef getTransportRequestManager() {
+            return transportRequestManager;
+        }
+    }
+    private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
+    class SortByEstTransTime implements Comparator<CarInformation>
+    {
+
+        public int compare(CarInformation a, CarInformation b)
+        {
+            return a.estTransTime- b.estTransTime;
+        }
+    }
 
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
@@ -38,35 +66,38 @@ public class TransportRequest extends AbstractActor {
         System.out.println("TRANSPORT REQUEST STARTED");
     }
 
-    private void evaluateCar(TransportCoordination msg){
+    private void evaluateCar(TransportCoordination.CarAvailableMsg msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
-        // TODO: Implementazione più sofisticata della memoria
+        //Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
+        // e le info della macchina
+        availableCars.add(new CarInformation(msg.getEstTransTime(),getSender()));
 
-        // Considerare la creazione di un oggetto tupla <CarRef, CarType, EstTransTime>
-        // - EstTransTime tempo di trasporto stimato
-        availableCars.add(getSender());
     }
 
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
-        availableCars.remove(getSender());
+        // TODO: Sistemare
+        // rimuovo la macchina se presente sulla lista
+        for(Iterator<CarInformation> iterator = availableCars.iterator(); iterator.hasNext(); ) {
+            if(iterator.next().transportRequestManager == getSender())
+                iterator.remove();
+        }
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
     private void selectCar(TransportCoordination msg){
         // Con la strategia sottostante il software sarà molto flessibile perché permetterà l'implementazione
         // di tecniche di selezione più sofisticate.
-        // TODO: Gestione della priorità di selezione.
-        //  - ordinamento per più veloce
-        //  - selezione per tipo più veloce
-        //  - non valuterei l'inserimento di altre tipologie di selezioni al momento
 
-        // Scelgo sempre la prima macchina che mi ha risposto per il trasporto
-        log.info("PRENOTO LA MACCHINA {}", availableCars.get(0));
-        // Avvisa il manager della richiesta di prenotazione da parte del passeggero
-        availableCars.get(0).tell(new TransportCoordination.CarBookingRequestMsg(), getContext().getParent());
+        log.info("PRENOTO LA MACCHINA {}");
+
+        //ordino la lista di macchine disponibili per EstTransTime e prendo il primo
+        if(!availableCars.isEmpty()){
+        Collections.sort(availableCars,new SortByEstTransTime());
+        availableCars.get(0).transportRequestManager.tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+        }
     }
 
     // Metodo che riceve la conferma della prenotazione di una macchina
@@ -80,7 +111,11 @@ public class TransportRequest extends AbstractActor {
 
     // Metodo che disdice il booking di una macchina
     private void bookingRejected(TransportCoordination msg){
-        log.info("PRENOTAZIONE MACCHINA RIFIUTATA {}", getSender());
+        log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
+
+        // TODO: Sistemare
+        if(availableCars.contains(getSender()))
+        availableCars.remove(getSender());
     }
 
     @Override
