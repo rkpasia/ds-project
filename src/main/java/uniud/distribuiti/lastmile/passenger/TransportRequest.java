@@ -63,7 +63,7 @@ public class TransportRequest extends AbstractActor {
         // Ordino la lista di macchine disponibili per EstTransTime e prendo il primo
         if(!availableCars.isEmpty()){
             Collections.sort(availableCars, new CarInformation.SortByEstTransTime());
-            availableCars.get(0).getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+            availableCars.get(0).getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSender());
             this.status = TransportRequestStatus.BOOKING;
             log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
         }
