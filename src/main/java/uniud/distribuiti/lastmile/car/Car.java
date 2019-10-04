@@ -11,7 +11,6 @@ import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
-
 import java.io.Serializable;
 
 public class Car extends AbstractActor {
@@ -85,11 +84,15 @@ public class Car extends AbstractActor {
 
     // Metodo di valutazione della richiesta di trasporto
     private void evaluateRequest(TransportRequestMessage msg){
-        log.info("VALUTAZIONE " + msg.toString());
-        Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
-        if(haveEnoughFuel(route.getDistance())){
-            log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+        if(this.status == CarStatus.AVAILABLE){
+            log.info("VALUTAZIONE " + msg.toString());
+            Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+            if(haveEnoughFuel(route.getDistance())){
+                log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
+                getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+            }
+        } else {
+            log.info("MACCHINA NON DISPONIBILE. IN TRANSITO OPPURE PRENOTATA.");
         }
     }
 
@@ -102,6 +105,7 @@ public class Car extends AbstractActor {
     private void transportCompleted(TransportCoordination.DestinationReached msg){
         this.location.setNode(msg.getLocation().getNode());
         log.info("PASSEGGERO TRASPORTATO A DESTINAZIONE");
+        this.status = CarStatus.AVAILABLE;
         // TODO: La macchina deve aggiornare il proprio carburante
     }
 
