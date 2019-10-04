@@ -98,12 +98,19 @@ public class Car extends AbstractActor {
         return (elapsedFuel) < 0 ? false : true;
     }
 
+    private void newDestinationReached(TransportCoordination.DestinationReached msg){
+        this.location.setNode(msg.getLocation().getNode());
+        log.info("PASSEGGERO TRASPORTATO A DESTINAZIONE");
+        // TODO: La macchina deve aggiornare il proprio carburante
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
                 .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("ISCRITTO RICEZIONE RICHIESTE"))
                 .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportRequestMessage.class, this::evaluateRequest)
+                .match(TransportCoordination.DestinationReached.class, this::newDestinationReached)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }

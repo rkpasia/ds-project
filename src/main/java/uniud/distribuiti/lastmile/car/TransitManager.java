@@ -3,12 +3,10 @@ package uniud.distribuiti.lastmile.car;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.actor.TimerScheduler;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.TransportRoute;
-import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
@@ -49,8 +47,9 @@ public class TransitManager extends AbstractActorWithTimers {
 
         // Quando ha raggiunto la fine del tragitto, informa macchina e passeggero
         if(!hasNext){
-            context().actorSelection("/user/MACCHINA").tell("ARRIVATI", getSelf());
-            passenger.tell("ARRIVATI", getSelf());
+            Location destination = new Location(this.route.getCurrentNode());
+            context().actorSelection("/user/MACCHINA").tell(new TransportCoordination.DestinationReached(destination), getSelf());
+            passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
             getTimers().cancelAll();
         }
 

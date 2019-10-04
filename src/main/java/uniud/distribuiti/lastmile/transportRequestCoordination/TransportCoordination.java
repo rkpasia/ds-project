@@ -1,6 +1,7 @@
 package uniud.distribuiti.lastmile.transportRequestCoordination;
 
 import uniud.distribuiti.lastmile.car.Car;
+import uniud.distribuiti.lastmile.location.Location;
 
 import java.io.Serializable;
 
@@ -35,6 +36,17 @@ public class TransportCoordination implements Serializable {
     public static class CarArrivedToPassenger extends TransportCoordination {}
 
     // Macchina ha raggiunto la destinazione presso cui il passeggero ha richiesto di essere portato
-    public static class DestinationReached extends TransportCoordination {}
+    public static class DestinationReached extends TransportCoordination {
+
+        private final Location location;
+
+        public DestinationReached(Location location){
+            this.location = location;
+        }
+
+        public Location getLocation() {
+            return location;
+        }
+    }
 
 }

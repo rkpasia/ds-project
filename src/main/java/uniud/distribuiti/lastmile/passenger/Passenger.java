@@ -55,6 +55,11 @@ public class Passenger extends AbstractActor {
         // Passenger is now in transit
     }
 
+    private void destinationReached(TransportCoordination.DestinationReached msg){
+        this.location.setNode(msg.getLocation().getNode());
+        log.info("DESTINAZIONE RAGGIUNTA");
+    }
+
     @Override
     public Receive createReceive(){
 
@@ -68,6 +73,7 @@ public class Passenger extends AbstractActor {
                 .match(EmitRequestMessage.class, this::emitTransportRequest)
                 .match(SelectCarMessage.class, this::selectCar)
                 .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
+                .match(TransportCoordination.DestinationReached.class, this::destinationReached)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }
