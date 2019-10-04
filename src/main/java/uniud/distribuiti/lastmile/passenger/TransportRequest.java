@@ -108,9 +108,10 @@ public class TransportRequest extends AbstractActor {
     private void bookingRejected(TransportCoordination msg){
         log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
 
-        // TODO: Sistemare
-        if(availableCars.contains(getSender()))
-        availableCars.remove(getSender());
+        availableCars.removeIf(car -> car.transportRequestManager == getSender());
+
+        // TODO: Che facciamo se la prenotazione è respinta?
+        //  Bisogna avvisare il passeggero (quindi dare feedback anche all'utente)
     }
 
     @Override
