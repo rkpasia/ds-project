@@ -79,11 +79,12 @@ public class TransportRequestMngr extends AbstractActor {
             log.info("RICEVUTA NOTIFICA DA MACCHINA DI UNA PRENOTAZIONE DA UN ALTRO PASSEGGERO, RISPONDO A PASSEGGERO");
             this.status = RequestManagerStatus.NOT_AVAILABLE;
             transportRequest.tell(new TransportCoordination.CarUnavailableMsg(), getSelf());
+            getContext().stop(getSelf());
         }
     }
 
     private void setupTransitManager(){
-        getContext().system().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation, this.passengerRef)), "TRANSIT_MANAGER");
+        getContext().system().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation, this.passengerRef)), "TRANSIT_MANAGER@" + this.transportRequest.path().name());
     }
 
     @Override
