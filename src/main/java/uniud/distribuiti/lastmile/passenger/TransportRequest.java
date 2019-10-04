@@ -26,15 +26,6 @@ public class TransportRequest extends AbstractActor {
 
     private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
 
-    class SortByEstTransTime implements Comparator<CarInformation>
-    {
-
-        public int compare(CarInformation a, CarInformation b)
-        {
-            return a.getRouteLength()- b.getRouteLength();
-        }
-    }
-
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
     }
@@ -51,7 +42,7 @@ public class TransportRequest extends AbstractActor {
     private void evaluateCar(TransportCoordination.CarAvailableMsg msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
-        //Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
+        // Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
         // e le info della macchina
         availableCars.add(new CarInformation(msg.getRouteLength(), getSender()));
 
@@ -60,7 +51,7 @@ public class TransportRequest extends AbstractActor {
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
-        // rimuovo la macchina se presente sulla lista
+        // Rimuovo la macchina se presente sulla lista
         availableCars.removeIf(car -> car.getTransportRequestManager() == getSender());
     }
 
@@ -69,12 +60,11 @@ public class TransportRequest extends AbstractActor {
         // Con la strategia sottostante il software sarà molto flessibile perché permetterà l'implementazione
         // di tecniche di selezione più sofisticate.
 
-        log.info("PRENOTO LA MACCHINA {}");
-
-        //ordino la lista di macchine disponibili per EstTransTime e prendo il primo
+        // Ordino la lista di macchine disponibili per EstTransTime e prendo il primo
         if(!availableCars.isEmpty()){
-        Collections.sort(availableCars,new SortByEstTransTime());
-        availableCars.get(0).getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+            Collections.sort(availableCars, new CarInformation.SortByEstTransTime());
+            availableCars.get(0).getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+            log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
         }
     }
 
