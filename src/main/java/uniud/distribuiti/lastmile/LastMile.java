@@ -24,11 +24,11 @@ public class LastMile {
     }
 
 
-    ActorRef passenger1 = setSinglePassenger("passenger1");
-    ActorRef passenger2 = setSinglePassenger("passenger2");
-    ActorRef passenger3 = setSinglePassenger("passenger3");
-    ActorRef car1 = setSingleCar("car1");
-    ActorRef car2 = setSingleCar("car2");
+    ActorRef passenger1 = setSinglePassenger("PASSEGGERO1");
+    ActorRef passenger2 = setSinglePassenger("PASSEGGERO2");
+    ActorRef passenger3 = setSinglePassenger("PASSEGGERO3");
+    ActorRef car1 = setSingleCar("MACCHINA");
+    ActorRef car2 = setSingleCar("MACCHINA");
 
     try {
       Thread.sleep(10000);
@@ -38,8 +38,29 @@ public class LastMile {
 
     // TODO: Mettere uno sleep tra una emissione e l'altra
     passenger1.tell(new Passenger.EmitRequestMessage(), null);
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     passenger2.tell(new Passenger.EmitRequestMessage(), null);
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     passenger3.tell(new Passenger.EmitRequestMessage(), null);
+
+
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    passenger1.tell(new Passenger.SelectCarMessage(), null);
+
+
   }
 
     private static ActorRef setSinglePassenger (String name){
