@@ -67,6 +67,9 @@ public class TransportRequest extends AbstractActor {
             car.getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSender());
             this.status = TransportRequestStatus.BOOKING;
             log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
+        } else {
+            // TODO: Che cosa fa il passeggero quando non ci sono più macchine disponibili?
+            log.warning("NON CI SONO MACCHINE DISPONIBILI!!!");
         }
     }
 
