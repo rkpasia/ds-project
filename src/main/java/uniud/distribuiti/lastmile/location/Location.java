@@ -1,6 +1,8 @@
 package uniud.distribuiti.lastmile.location;
 
-public class Location {
+import java.io.Serializable;
+
+public class Location implements Serializable {
 
     private int node;
 

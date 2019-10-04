@@ -24,33 +24,7 @@ public class TransportRequest extends AbstractActor {
         CONFIRMED
     }
 
-    private static class CarInformation{
-        private int estTransTime;
-        private ActorRef transportRequestManager;
-
-        public CarInformation(int estTransTime, ActorRef transportRequestManager){
-
-            this.estTransTime =estTransTime;
-            this.transportRequestManager = transportRequestManager;
-        }
-
-        public int  getMsg() {
-            return estTransTime;
-        }
-
-        public ActorRef getTransportRequestManager() {
-            return transportRequestManager;
-        }
-    }
     private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
-    class SortByEstTransTime implements Comparator<CarInformation>
-    {
-
-        public int compare(CarInformation a, CarInformation b)
-        {
-            return a.estTransTime- b.estTransTime;
-        }
-    }
 
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
@@ -68,30 +42,29 @@ public class TransportRequest extends AbstractActor {
     private void evaluateCar(TransportCoordination.CarAvailableMsg msg){
         log.info("DISPONIBILITA RICEVUTA DA {}", getSender());
 
-        //Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
+        // Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
         // e le info della macchina
-        availableCars.add(new CarInformation(msg.getEstTransTime(),getSender()));
+        availableCars.add(new CarInformation(msg.getRouteLength(), getSender()));
 
     }
 
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
-        // rimuovo la macchina se presente sulla lista
-        for(Iterator<CarInformation> iterator = availableCars.iterator(); iterator.hasNext(); ) {
-            if(iterator.next().transportRequestManager == getSender())
-                iterator.remove();
-        }
+        // Rimuovo la macchina se presente sulla lista
+        availableCars.removeIf(car -> car.getTransportRequestManager() == getSender());
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
     private void selectCar(TransportCoordination msg){
-        log.info("PRENOTO LA MACCHINA {}");
+        // Con la strategia sottostante il software sarà molto flessibile perché permetterà l'implementazione
+        // di tecniche di selezione più sofisticate.
 
-        //ordino la lista di macchine disponibili per EstTransTime e prendo il primo
+        // Ordino la lista di macchine disponibili per EstTransTime e prendo il primo
         if(!availableCars.isEmpty()){
-        Collections.sort(availableCars,new SortByEstTransTime());
-        availableCars.get(0).transportRequestManager.tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+            Collections.sort(availableCars, new CarInformation.SortByEstTransTime());
+            availableCars.get(0).getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+            log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
         }
     }
 
@@ -108,8 +81,10 @@ public class TransportRequest extends AbstractActor {
     private void bookingRejected(TransportCoordination msg){
         log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
 
-        if(availableCars.contains(getSender()))
-        availableCars.remove(getSender());
+        availableCars.removeIf(car -> car.getTransportRequestManager() == getSender());
+
+        // TODO: Che facciamo se la prenotazione è respinta?
+        //  Bisogna avvisare il passeggero (quindi dare feedback anche all'utente)
     }
 
     @Override

@@ -36,6 +36,7 @@ public class LastMile {
       e.printStackTrace();
     }
 
+    // TODO: Mettere uno sleep tra una emissione e l'altra
     passenger1.tell(new Passenger.EmitRequestMessage(), null);
     passenger2.tell(new Passenger.EmitRequestMessage(), null);
     passenger3.tell(new Passenger.EmitRequestMessage(), null);
@@ -58,4 +59,3 @@ public class LastMile {
       return syst.actorOf(Car.props(), name);
     }
   }
-

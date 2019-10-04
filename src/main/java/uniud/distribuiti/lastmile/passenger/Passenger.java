@@ -27,6 +27,7 @@ public class Passenger extends AbstractActor {
     private ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     private ActorRef transportRequest;
+    private ActorRef car;
 
     private Location location;
 
@@ -39,7 +40,7 @@ public class Passenger extends AbstractActor {
     // Inizializzo nuovo attore
     // Inoltro richiesta con riferimento all attore figlio gestore della mia richiesta
     private void emitTransportRequest(EmitRequestMessage msg){
-        transportRequest = getContext().actorOf(TransportRequest.props(), self().path().name() + "-PassengerTransportRequest");
+        transportRequest = getContext().actorOf(TransportRequest.props(), "TRANSPORT_REQUEST@" + self().path().name());
 
         // In questo momento tutti i passeggeri vogliono andare al nodo 0
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
@@ -47,6 +48,16 @@ public class Passenger extends AbstractActor {
 
     private void selectCar(SelectCarMessage msg){
         transportRequest.tell(new TransportCoordination.SelectCarMsg(), getSelf());
+    }
+
+    private void carArrived(TransportCoordination msg){
+        this.car = getSender();     // Riferimento alla macchina che mi sta trasportando
+        // Passenger is now in transit
+    }
+
+    private void destinationReached(TransportCoordination.DestinationReached msg){
+        this.location.setNode(msg.getLocation().getNode());
+        log.info("DESTINAZIONE RAGGIUNTA");
     }
 
     @Override
@@ -61,6 +72,8 @@ public class Passenger extends AbstractActor {
                 )
                 .match(EmitRequestMessage.class, this::emitTransportRequest)
                 .match(SelectCarMessage.class, this::selectCar)
+                .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
+                .match(TransportCoordination.DestinationReached.class, this::destinationReached)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }

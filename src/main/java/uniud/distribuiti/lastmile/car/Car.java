@@ -53,7 +53,6 @@ public class Car extends AbstractActor {
     private Location location;
     private Double fuel; // Carburante in litri
     private final Double kmPerLiter = 14.0;
-    private Route route;
 
     public Car(){
         this.status = CarStatus.AVAILABLE;
@@ -86,10 +85,10 @@ public class Car extends AbstractActor {
     // Metodo di valutazione della richiesta di trasporto
     private void evaluateRequest(TransportRequestMessage msg){
         log.info("VALUTAZIONE " + msg.toString());
-        this.route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
-        if(haveEnoughFuel(this.route.distance)){
+        Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+        if(haveEnoughFuel(route.getDistance())){
             log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            getContext().actorOf(TransportRequestMngr.props(getSender(),route.distance), getSender().path().name() + "CarTransportRequestManager");
+            getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
         }
     }
 
@@ -99,12 +98,19 @@ public class Car extends AbstractActor {
         return (elapsedFuel) < 0 ? false : true;
     }
 
+    private void transportCompleted(TransportCoordination.DestinationReached msg){
+        this.location.setNode(msg.getLocation().getNode());
+        log.info("PASSEGGERO TRASPORTATO A DESTINAZIONE");
+        // TODO: La macchina deve aggiornare il proprio carburante
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
                 .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("ISCRITTO RICEZIONE RICHIESTE"))
                 .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportRequestMessage.class, this::evaluateRequest)
+                .match(TransportCoordination.DestinationReached.class, this::transportCompleted)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }

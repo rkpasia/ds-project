@@ -5,6 +5,9 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.Route;
+import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // Transport Request Manager acotr
@@ -18,6 +21,7 @@ public class TransportRequestMngr extends AbstractActor {
 
     // Riferimento ad attore per coordinamento richiesta di trasporto
     private ActorRef transportRequest;
+    private ActorRef passengerRef;
 
     private RequestManagerStatus status;
     private enum RequestManagerStatus {
@@ -29,14 +33,20 @@ public class TransportRequestMngr extends AbstractActor {
         CONFIRMED,          // Macchina è stata confermata dal passeggero
     }
 
-    public static Props props(ActorRef transportRequest,  int distance ){
-        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest,distance));
+    // Percorso che dovrà fare la macchina
+    private Route route;
+    private Location passengerLocation;     // Location del passeggero
+
+    public static Props props(ActorRef transportRequest, Route route, Location passengerLocation){
+        return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest, route, passengerLocation));
     }
 
-    public TransportRequestMngr(ActorRef transportRequest,int distance){
+    public TransportRequestMngr(ActorRef transportRequest, Route route, Location passengerLocation){
         this.transportRequest = transportRequest;
+        this.route = route;
+        this.passengerLocation = passengerLocation;
         this.status = RequestManagerStatus.WAITING;
-        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(distance), getSelf());
+        this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(route.getDistance()), getSelf());
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
@@ -48,12 +58,14 @@ public class TransportRequestMngr extends AbstractActor {
 
         if(msg instanceof TransportCoordination.CarBookingRequestMsg) {
             log.info("INOLTRO RICHIESTA A MACCHINA");
+            this.passengerRef = getSender();
             getContext().getParent().tell(msg, getSelf());
         }
 
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
             this.status = RequestManagerStatus.AVAILABLE;
+            setupTransitManager();
             transportRequest.tell(msg, getContext().getParent());
         }
 
@@ -68,6 +80,10 @@ public class TransportRequestMngr extends AbstractActor {
             this.status = RequestManagerStatus.NOT_AVAILABLE;
             transportRequest.tell(new TransportCoordination.CarUnavailableMsg(), getSelf());
         }
+    }
+
+    private void setupTransitManager(){
+        getContext().system().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation, this.passengerRef)), "TRANSIT_MANAGER");
     }
 
     @Override

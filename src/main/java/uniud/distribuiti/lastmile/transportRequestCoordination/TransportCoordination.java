@@ -1,5 +1,6 @@
 package uniud.distribuiti.lastmile.transportRequestCoordination;
 
+import uniud.distribuiti.lastmile.location.Location;
 import java.io.Serializable;
 
 public class TransportCoordination implements Serializable {
@@ -9,15 +10,14 @@ public class TransportCoordination implements Serializable {
     // di valutare la disponibilità ricevuta
     public static class CarAvailableMsg extends TransportCoordination{
 
-        private final int estTransTime;
+        private final int routeLength;
 
-
-        public CarAvailableMsg(int estTransTime ){
-            this.estTransTime = estTransTime;
+        public CarAvailableMsg(int routeLength){
+            this.routeLength = routeLength;
         }
 
-        public int getEstTransTime() {
-            return estTransTime;
+        public int getRouteLength() {
+            return routeLength;
         }
 
     }
@@ -41,5 +41,22 @@ public class TransportCoordination implements Serializable {
 
     // Messaggio per richiedere la selezione di una macchina
     public static class SelectCarMsg extends TransportCoordination {}
+
+    // Macchina ha raggiunto la location presso cui si trova il passeggero
+    public static class CarArrivedToPassenger extends TransportCoordination {}
+
+    // Macchina ha raggiunto la destinazione presso cui il passeggero ha richiesto di essere portato
+    public static class DestinationReached extends TransportCoordination {
+
+        private final Location location;
+
+        public DestinationReached(Location location){
+            this.location = location;
+        }
+
+        public Location getLocation() {
+            return location;
+        }
+    }
 
 }
