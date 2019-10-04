@@ -69,6 +69,7 @@ public class TransitManager extends AbstractActorWithTimers {
                 .match(
                         StartTick.class,
                         msg -> {
+                            // TODO: Avviso macchina inizio trasporto per fare update del suo stato (opzionale)
                             getTimers().startPeriodicTimer(TICK_KEY, new TransitTick(), Duration.ofSeconds(5));
                         }
                 )
