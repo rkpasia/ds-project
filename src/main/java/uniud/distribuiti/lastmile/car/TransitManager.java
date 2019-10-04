@@ -47,12 +47,16 @@ public class TransitManager extends AbstractActorWithTimers {
 
         // Quando ha raggiunto la fine del tragitto, informa macchina e passeggero
         if(!hasNext){
-            Location destination = new Location(this.route.getCurrentNode());
-            context().actorSelection("/user/MACCHINA").tell(new TransportCoordination.DestinationReached(destination), getSelf());
-            passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
-            getTimers().cancelAll();
+            endTransit();
         }
 
+    }
+
+    private void endTransit() {
+        Location destination = new Location(this.route.getCurrentNode());
+        context().actorSelection("/user/MACCHINA").tell(new TransportCoordination.DestinationReached(destination), getSelf());
+        passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
+        getTimers().cancelAll();
     }
 
     @Override
