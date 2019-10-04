@@ -77,12 +77,8 @@ public class TransportRequest extends AbstractActor {
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
-        // TODO: Sistemare
         // rimuovo la macchina se presente sulla lista
-        for(Iterator<CarInformation> iterator = availableCars.iterator(); iterator.hasNext(); ) {
-            if(iterator.next().transportRequestManager == getSender())
-                iterator.remove();
-        }
+        availableCars.removeIf(car -> car.transportRequestManager == getSender());
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
