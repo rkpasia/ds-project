@@ -64,6 +64,7 @@ public class TransportRequest extends AbstractActor {
         if(!availableCars.isEmpty()){
             Collections.sort(availableCars, new CarInformation.SortByEstTransTime());
             availableCars.get(0).getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSelf());
+            this.status = TransportRequestStatus.BOOKING;
             log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
         }
     }
@@ -75,6 +76,7 @@ public class TransportRequest extends AbstractActor {
         // TODO: Notifica passeggero della ricezione di conferma della prenotazione da parte di una macchina
         //  Questo è l'entry poit della fase due della richiesta, la fase di coordinamento dello stato del trasporto.
         log.info("MACCHINA PRENOTATA {}", getSender());
+        this.status = TransportRequestStatus.CONFIRMED;
     }
 
     // Metodo che disdice il booking di una macchina
