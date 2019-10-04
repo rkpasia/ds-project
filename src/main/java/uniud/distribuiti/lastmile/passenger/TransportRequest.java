@@ -24,19 +24,18 @@ public class TransportRequest extends AbstractActor {
         CONFIRMED
     }
 
-    // TODO: Sistemare
     private static class CarInformation{
-        private int estTransTime;
+        private int routeLength;
         private ActorRef transportRequestManager;
 
-        public CarInformation(int estTransTime, ActorRef transportRequestManager){
+        public CarInformation(int routeLength, ActorRef transportRequestManager){
 
-            this.estTransTime =estTransTime;
+            this.routeLength = routeLength;
             this.transportRequestManager = transportRequestManager;
         }
 
-        public int  getMsg() {
-            return estTransTime;
+        public int  getRouteLength() {
+            return routeLength;
         }
 
         public ActorRef getTransportRequestManager() {
@@ -49,7 +48,7 @@ public class TransportRequest extends AbstractActor {
 
         public int compare(CarInformation a, CarInformation b)
         {
-            return a.estTransTime- b.estTransTime;
+            return a.routeLength- b.routeLength;
         }
     }
 
@@ -71,7 +70,7 @@ public class TransportRequest extends AbstractActor {
 
         //Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
         // e le info della macchina
-        availableCars.add(new CarInformation(msg.getEstTransTime(),getSender()));
+        availableCars.add(new CarInformation(msg.getRouteLength(), getSender()));
 
     }
 
