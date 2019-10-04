@@ -52,7 +52,7 @@ public class TransportRequest extends AbstractActor {
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
         // Rimuovo la macchina se presente sulla lista
-        availableCars.removeIf(car -> car.getTransportRequestManager() == getSender());
+        availableCars.removeIf(car -> car.getTransportRequestManager().equals(getSender()));
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
@@ -84,7 +84,7 @@ public class TransportRequest extends AbstractActor {
     private void bookingRejected(TransportCoordination msg){
         log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
 
-        availableCars.removeIf(car -> car.getTransportRequestManager() == getSender());
+        availableCars.removeIf(car -> car.getTransportRequestManager().equals(getSender()));
 
         // TODO: Che facciamo se la prenotazione è respinta?
         //  Bisogna avvisare il passeggero (quindi dare feedback anche all'utente)
