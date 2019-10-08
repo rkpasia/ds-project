@@ -18,13 +18,32 @@ public class Car extends AbstractActor {
 
     private LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
-    public static class RequestStatusMsg {}
+    private CarStatus status;
+    public enum CarStatus {
+        AVAILABLE,
+        BOOKED,
+        TRANSIT
+    }
+
+    private Location location;
+    private Double fuel; // Carburante in litri
+    private final Double kmPerLiter = 14.0;
 
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
     }
 
-    // TODO: Verificare se ci sono altri serializzatori migliori
+    public Car(){
+        this.status = CarStatus.AVAILABLE;
+        ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
+        mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
+
+        // Inizializzazione standard carburante macchina
+        this.fuel = 20.0;
+        LocationHelper locationHelper = new LocationHelper();
+        this.location = locationHelper.assignLocation();
+    }
+
     public static class TransportRequestMessage implements Serializable {
         private final int destination;
         private final int passengerLocation;
@@ -41,28 +60,6 @@ public class Car extends AbstractActor {
         public int getPassengerLocation(){
             return this.passengerLocation;
         }
-    }
-
-    private CarStatus status;
-    public enum CarStatus {
-        AVAILABLE,
-        BOOKED,
-        TRANSIT
-    }
-
-    private Location location;
-    private Double fuel; // Carburante in litri
-    private final Double kmPerLiter = 14.0;
-
-    public Car(){
-        this.status = CarStatus.AVAILABLE;
-        ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
-        mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
-
-        // Inizializzazione standard carburante macchina
-        this.fuel = 20.0;
-        LocationHelper locationHelper = new LocationHelper();
-        this.location = locationHelper.assignLocation();
     }
 
     private void carBooking(TransportCoordination.CarBookingRequestMsg msg){
