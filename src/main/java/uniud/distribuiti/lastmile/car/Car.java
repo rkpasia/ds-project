@@ -71,8 +71,8 @@ public class Car extends AbstractActor {
 
         if(this.status == CarStatus.AVAILABLE) {
             log.info("SONO DISPONIBILE");
-            this.status = CarStatus.BOOKED;
 
+            // Notifica ricezione booking e indisponibilità/disponibilità ai propri manager figli
             getContext().getChildren().forEach(child ->{
                 if(child != getSender()) child.tell(new TransportCoordination.CarHasBeenBooked(), getSelf());
                 else getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
@@ -80,6 +80,8 @@ public class Car extends AbstractActor {
 
             // Creazione TransitManager
             getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger)), "TRANSIT_MANAGER");
+            // Macchina inizia transito verso passeggero
+            this.status = CarStatus.TRANSIT;
         } else {
             log.info("NON SONO DISPONIBILE");
             getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());
