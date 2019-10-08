@@ -48,12 +48,16 @@ public class PassengerTest  {
                         Duration.ofSeconds(10),
                         () -> {
 
+                            // chiedo a due passeggeri di emettere una richiesta di passaggio
                             subject1.tell(new Passenger.EmitRequestMessage(),getRef());
                             subject2.tell(new Passenger.EmitRequestMessage(),getRef());
 
+                            // mi aspetto di ricevere la richiesta
                             expectMsgClass(Car.TransportRequestMessage.class);
                             expectMsgClass(Car.TransportRequestMessage.class);
 
+                            // chiedo di prenotare un auto ma
+                            // non mi aspetto risposte perché non ci sono auto nel sistema
                             subject1.tell(new Passenger.SelectCarMessage(),getRef());
                             subject2.tell(new Passenger.SelectCarMessage(),getRef());
 
