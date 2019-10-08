@@ -60,6 +60,15 @@ public class TransitManager extends AbstractActorWithTimers {
         context().stop(getSelf());
     }
 
+    private void carBroken(Car.CarBreakDown msg){
+        log.info("TRANSITO FERMATO, MACCHINA GUASTA");
+        getTimers().cancelAll();
+        Location brokenLocation = new Location(this.route.getCurrentNode());
+        getSender().tell(new Car.BrokenLocation(brokenLocation), getSelf());
+        passenger.tell(new Car.BrokenLocation(brokenLocation), getSelf());
+        context().stop(getSelf());
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -73,6 +82,10 @@ public class TransitManager extends AbstractActorWithTimers {
                 .match(
                         TransitTick.class,
                         this::goToNext
+                )
+                .match(
+                        Car.CarBreakDown.class,
+                        this::carBroken
                 )
                 .build();
     }

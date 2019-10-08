@@ -62,6 +62,16 @@ public class Passenger extends AbstractActor {
         log.info("DESTINAZIONE RAGGIUNTA");
     }
 
+    private void carBroken(Car.BrokenLocation msg){
+        log.info("MACCHINA ROTTA, RICHIEDO NUOVA");
+        this.location.setNode(msg.location.getNode());
+        //transportRequest.tell(msg, getSelf());
+        // Richiesta nuova macchina per passeggero
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
+
+        // TODO: Scheduling messaggio automatico per prenotare la macchina più vicina disponibile
+    }
+
     @Override
     public Receive createReceive(){
 
@@ -76,6 +86,7 @@ public class Passenger extends AbstractActor {
                 .match(SelectCarMessage.class, this::selectCar)
                 .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
                 .match(TransportCoordination.DestinationReached.class, this::destinationReached)
+                .match(Car.BrokenLocation.class, this::carBroken)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }

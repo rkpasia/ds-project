@@ -22,7 +22,8 @@ public class Car extends AbstractActor {
     public enum CarStatus {
         AVAILABLE,
         BOOKED,
-        TRANSIT
+        TRANSIT,
+        BROKEN
     }
 
     private Location location;
@@ -59,6 +60,17 @@ public class Car extends AbstractActor {
 
         public int getPassengerLocation(){
             return this.passengerLocation;
+        }
+    }
+
+    public static class CarBreakDown implements Serializable {}
+
+    public static class BrokenLocation implements Serializable {
+
+        public final Location location;
+
+        public BrokenLocation(Location location){
+            this.location = location;
         }
     }
 
@@ -112,6 +124,21 @@ public class Car extends AbstractActor {
         // TODO: La macchina deve aggiornare il proprio carburante
     }
 
+    // Gestione guasto anomalo macchina
+    private void carBroken(CarBreakDown msg){
+        log.info("MACCHINA GUASTA");
+        this.status = CarStatus.BROKEN;
+        if (getContext().findChild("TRANSIT_MANAGER").isPresent())
+            getContext().actorSelection("TRANSIT_MANAGER").tell(new CarBreakDown(), getSelf());
+    }
+
+    private void carBrokenLocation(BrokenLocation msg){
+        log.info("MACCHINA FERMATA");
+        this.location.setNode(msg.location.getNode());
+        // Manda un messaggio broadcast per richiedere una nuova macchina per il passeggero!
+
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -119,6 +146,8 @@ public class Car extends AbstractActor {
                 .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportRequestMessage.class, this::evaluateRequest)
                 .match(TransportCoordination.DestinationReached.class, this::transportCompleted)
+                .match(CarBreakDown.class, this::carBroken)
+                .match(BrokenLocation.class, this::carBrokenLocation)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }
