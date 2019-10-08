@@ -10,6 +10,7 @@ import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
+import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 import java.io.Serializable;
 
@@ -64,7 +65,7 @@ public class Car extends AbstractActor {
         this.location = locationHelper.assignLocation();
     }
 
-    private void carBooking(TransportCoordination msg){
+    private void carBooking(TransportCoordination.CarBookingRequestMsg msg){
 
         log.info("RICEVUTA RICHIESTA DI BOOKING");
 
@@ -76,6 +77,9 @@ public class Car extends AbstractActor {
                 if(child != getSender()) child.tell(new TransportCoordination.CarHasBeenBooked(), getSelf());
                 else getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
             });
+
+            // Creazione TransitManager
+            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger)), "TRANSIT_MANAGER@" + getSender().path().name());
         } else {
             log.info("NON SONO DISPONIBILE");
             getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());

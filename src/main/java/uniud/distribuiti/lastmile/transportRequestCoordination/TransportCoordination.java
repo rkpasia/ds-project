@@ -1,6 +1,9 @@
 package uniud.distribuiti.lastmile.transportRequestCoordination;
 
+import akka.actor.ActorRef;
 import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.Route;
+
 import java.io.Serializable;
 
 public class TransportCoordination implements Serializable {
@@ -28,7 +31,24 @@ public class TransportCoordination implements Serializable {
     public static class CarUnavailableMsg extends TransportCoordination {}
 
     // Messaggio di richiesta prenotazione macchina da parte del passeggero
-    public static class CarBookingRequestMsg extends TransportCoordination {}
+    public static class CarBookingRequestMsg extends TransportCoordination {
+
+        public final ActorRef passenger;
+        public final Route route;
+        public final Location location;
+
+        public CarBookingRequestMsg(){
+            this.passenger = null;
+            this.route = null;
+            this.location = null;
+        }
+
+        public CarBookingRequestMsg(ActorRef passenger, Route route, Location location){
+            this.passenger = passenger;
+            this.route = route;
+            this.location = location;
+        }
+    }
 
     // Messaggio di notifica che la macchina è stata prenotata da un altro passeggero
     public static class CarHasBeenBooked extends TransportCoordination {}

@@ -59,13 +59,12 @@ public class TransportRequestMngr extends AbstractActor {
         if(msg instanceof TransportCoordination.CarBookingRequestMsg) {
             log.info("INOLTRO RICHIESTA A MACCHINA");
             this.passengerRef = getSender();
-            getContext().getParent().tell(msg, getSelf());
+            getContext().getParent().tell(new TransportCoordination.CarBookingRequestMsg(passengerRef, route, passengerLocation), getSelf());
         }
 
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
             this.status = RequestManagerStatus.AVAILABLE;
-            setupTransitManager();
             transportRequest.tell(msg, getContext().getParent());
         }
 
@@ -81,10 +80,6 @@ public class TransportRequestMngr extends AbstractActor {
             transportRequest.tell(new TransportCoordination.CarUnavailableMsg(), getSelf());
             getContext().stop(getSelf());
         }
-    }
-
-    private void setupTransitManager(){
-        getContext().system().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(route), passengerLocation, this.passengerRef)), "TRANSIT_MANAGER@" + this.transportRequest.path().name());
     }
 
     @Override
