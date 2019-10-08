@@ -85,11 +85,16 @@ public class Car extends AbstractActor {
 
     // Metodo di valutazione della richiesta di trasporto
     private void evaluateRequest(TransportRequestMessage msg){
-        log.info("VALUTAZIONE " + msg.toString());
-        Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
-        if(haveEnoughFuel(route.getDistance())){
-            log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-            getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+        if(this.status==CarStatus.AVAILABLE) {
+            log.info("VALUTAZIONE " + msg.toString());
+            Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
+            if (haveEnoughFuel(route.getDistance())) {
+                Boolean existChild = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).isPresent();
+                if(! existChild) {
+                    log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
+                    getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+                }else  log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO");
+            }
         }
     }
 
