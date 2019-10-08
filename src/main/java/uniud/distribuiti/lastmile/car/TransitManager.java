@@ -57,10 +57,7 @@ public class TransitManager extends AbstractActorWithTimers {
         getContext().parent().tell(new TransportCoordination.DestinationReached(destination), getSelf());
         passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
         getTimers().cancelAll();
-
-        // TODO: Gestione fine vita TransitManager
-        //  Valutare l'inserimento della terminazione dell'attore all'interno di Car
-        //  ... (forse non è possibile data la gerarchia)
+        context().stop(getSelf());
     }
 
     @Override

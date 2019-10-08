@@ -79,7 +79,7 @@ public class Car extends AbstractActor {
             });
 
             // Creazione TransitManager
-            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger)), "TRANSIT_MANAGER@" + getSender().path().name());
+            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger)), "TRANSIT_MANAGER");
         } else {
             log.info("NON SONO DISPONIBILE");
             getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());
