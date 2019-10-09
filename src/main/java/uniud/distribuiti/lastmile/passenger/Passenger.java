@@ -62,14 +62,20 @@ public class Passenger extends AbstractActor {
         log.info("DESTINAZIONE RAGGIUNTA");
     }
 
-    private void carBroken(Car.BrokenLocation msg){
-        log.info("MACCHINA ROTTA, RICHIEDO NUOVA");
+    private void carBrokenInLocation(Car.BrokenLocation msg){
+        log.info("MACCHINA ROTTA CON PASSEGGERO A BORDO, RICHIEDO NUOVA");
         this.location.setNode(msg.location.getNode());
         //transportRequest.tell(msg, getSelf());
         // Richiesta nuova macchina per passeggero
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
 
         // TODO: Scheduling messaggio automatico per prenotare la macchina più vicina disponibile
+    }
+
+    private void carBroken(Car.CarBreakDown msg){
+        log.info("MACCHINA HA AVUTO PROBLEMA MENTRE IN ARRIVO, RICHIEDO NUOVA");
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
+        // A questo punto l'utente può scegliere dall'applicazione la macchina nuova
     }
 
     @Override
@@ -86,7 +92,8 @@ public class Passenger extends AbstractActor {
                 .match(SelectCarMessage.class, this::selectCar)
                 .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
                 .match(TransportCoordination.DestinationReached.class, this::destinationReached)
-                .match(Car.BrokenLocation.class, this::carBroken)
+                .match(Car.BrokenLocation.class, this::carBrokenInLocation)
+                .match(Car.CarBreakDown.class, this::carBroken)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }

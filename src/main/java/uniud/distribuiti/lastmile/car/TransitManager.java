@@ -24,6 +24,7 @@ public class TransitManager extends AbstractActorWithTimers {
     private final TransportRoute route;
     private final Location passengerLocation;
     private final ActorRef passenger;
+    private boolean PASSENGER_ONBOARD;
     private static Object TICK_KEY = "TransportTick";   // Chiave per i timer
     private static final class StartTick {}             // Tick inizio transito
     private static final class TransitTick {}           // Tick di transito
@@ -43,6 +44,7 @@ public class TransitManager extends AbstractActorWithTimers {
         // Raggiunta la location del passeggero, informalo che la macchina è arrivata
         if(this.route.getCurrentNode() == this.passengerLocation.getNode()) {
             passenger.tell(new TransportCoordination.CarArrivedToPassenger(), getContext().parent());
+            this.PASSENGER_ONBOARD = true;
         }
 
         // Quando ha raggiunto la fine del tragitto, informa macchina e passeggero
@@ -65,7 +67,8 @@ public class TransitManager extends AbstractActorWithTimers {
         getTimers().cancelAll();
         Location brokenLocation = new Location(this.route.getCurrentNode());
         getSender().tell(new Car.BrokenLocation(brokenLocation), getSelf());
-        passenger.tell(new Car.BrokenLocation(brokenLocation), getSelf());
+        if (PASSENGER_ONBOARD) passenger.tell(new Car.BrokenLocation(brokenLocation), getSelf());
+        else passenger.tell(new Car.CarBreakDown(), getSelf());
         context().stop(getSelf());
     }
 
