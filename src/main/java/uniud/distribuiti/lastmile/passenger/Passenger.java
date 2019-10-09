@@ -45,6 +45,7 @@ public class Passenger extends AbstractActor {
         }
 
         // In questo momento tutti i passeggeri vogliono andare al nodo 0
+        // TODO: Miglioramento del messaggio per gestire le location inviate
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
     }
 
