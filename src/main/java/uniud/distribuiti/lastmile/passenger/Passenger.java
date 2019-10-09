@@ -49,6 +49,7 @@ public class Passenger extends AbstractActor {
     }
 
     private void selectCar(SelectCarMessage msg){
+        log.info("SCELGO LA MACCHINA");
         transportRequest.tell(new TransportCoordination.SelectCarMsg(), getSelf());
     }
 
@@ -82,12 +83,6 @@ public class Passenger extends AbstractActor {
     public Receive createReceive(){
 
         return receiveBuilder()
-                .match(
-                        String.class,
-                        s -> {
-                            log.info("Ricevuto {} da {}", s, getSender());
-                        }
-                )
                 .match(EmitRequestMessage.class, this::emitTransportRequest)
                 .match(SelectCarMessage.class, this::selectCar)
                 .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
