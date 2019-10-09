@@ -9,7 +9,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import uniud.distribuiti.lastmile.car.Car;
+import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.passenger.Passenger;
+import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
 
@@ -37,8 +39,7 @@ public class PassengerTest  {
 
         new TestKit(system) {
             {
-                final ActorRef subject1 = system.actorOf(Passenger.props(), "Passenger1");
-                final ActorRef subject2 = system.actorOf(Passenger.props(), "Passenger2");
+                final ActorRef subject = system.actorOf(Passenger.props(), "Passenger");
 
                 ActorRef mediator = DistributedPubSub.get(system).mediator();
                 mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getRef()), getRef());
@@ -49,17 +50,22 @@ public class PassengerTest  {
                         () -> {
 
                             // chiedo a due passeggeri di emettere una richiesta di passaggio
-                            subject1.tell(new Passenger.EmitRequestMessage(),getRef());
-                            subject2.tell(new Passenger.EmitRequestMessage(),getRef());
+                            subject.tell(new Passenger.EmitRequestMessage(),getRef());
 
                             // mi aspetto di ricevere la richiesta
-                            expectMsgClass(Car.TransportRequestMessage.class);
                             expectMsgClass(Car.TransportRequestMessage.class);
 
                             // chiedo di prenotare un auto ma
                             // non mi aspetto risposte perché non ci sono auto nel sistema
-                            subject1.tell(new Passenger.SelectCarMessage(),getRef());
-                            subject2.tell(new Passenger.SelectCarMessage(),getRef());
+                            subject.tell(new Passenger.SelectCarMessage(),getRef());
+
+                            //non mi aspetto risposta
+                            subject.tell(new TransportCoordination.CarArrivedToPassenger(),getRef());
+                            subject.tell(new TransportCoordination.DestinationReached(new Location(0)),getRef());
+                            // richiedo una nuova macchina
+                            subject.tell(new Car.BrokenLocation(new Location(0)),getRef());
+                            expectMsgClass(Car.TransportRequestMessage.class);
+
 
                             //aspettiamo sempre perché il shutdown del sistema potrebbe arrivare prima di alcuni messaggi che ci aspettiamo
                             expectNoMessage();

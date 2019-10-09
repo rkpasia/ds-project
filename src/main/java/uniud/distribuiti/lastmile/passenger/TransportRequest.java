@@ -1,13 +1,12 @@
 package uniud.distribuiti.lastmile.passenger;
 
 import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
-import java.util.*;
+import java.util.ArrayList;
 
 
 // TransportRequest actor
@@ -64,6 +63,7 @@ public class TransportRequest extends AbstractActor {
         if(!availableCars.isEmpty()){
             availableCars.sort(new CarInformation.SortByEstTransTime());
             CarInformation car = availableCars.get(0);
+
             car.getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSender());
             this.status = TransportRequestStatus.BOOKING;
             log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());

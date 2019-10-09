@@ -2,38 +2,26 @@ package uniud.distribuiti.lastimile.test;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.cluster.pubsub.DistributedPubSub;
-import akka.cluster.pubsub.DistributedPubSubMediator;
-import akka.testkit.TestProbe;
+import akka.actor.PoisonPill;
+import akka.actor.Terminated;
 import akka.testkit.javadsl.TestKit;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import scala.collection.immutable.Seq;
 import uniud.distribuiti.lastmile.car.Car;
 import uniud.distribuiti.lastmile.passenger.Passenger;
+import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
-import static junit.framework.TestCase.assertEquals;
+import java.time.Duration;
 
 public class TransportRequestTest {
 
     static ActorSystem system;
 
-    private static TestProbe c;
-
     @BeforeClass
     public static void setup(){
 
-        Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=3000").withFallback(ConfigFactory.load());
-        system = ActorSystem.create("ClusterSystem", config);
-
-        ActorRef mediator = DistributedPubSub.get(system).mediator();
-        c = new TestProbe(system, "car");
-        mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", c.ref()), c.ref());
-
+        system =ActorSystem.create();
     }
 
     @AfterClass
@@ -48,13 +36,23 @@ public class TransportRequestTest {
         new TestKit(system){
             {
 
-                final Props createP = Props.create(Passenger.class);
-                final ActorRef passenger = system.actorOf(createP, "Passenger");
-                passenger.tell(new Passenger.EmitRequestMessage(), getRef());
+                final ActorRef car = system.actorOf(Car.props(), "car");
+                final ActorRef passenger = system.actorOf(Passenger.props(), "passenger");
 
-                Seq ret = c.receiveN(2);
-                System.out.println(ret.toList().toString());
-                assertEquals(ret.last().getClass(), Car.TransportRequestMessage.class);
+                final TestKit probe = new TestKit(system);
+                probe.watch(passenger);
+                within(
+                        Duration.ofSeconds(10),
+                        () -> {
+                            passenger.tell(PoisonPill.getInstance(), ActorRef.noSender());
+                            probe.expectMsgClass(Terminated.class);
+
+                            probe.send(car,new Car.TransportRequestMessage(0,0));
+                            probe.expectMsgClass(TransportCoordination.CarAvailableMsg.class);
+                            expectNoMessage();
+                            return null;
+                        });
+
 
             }
         };
