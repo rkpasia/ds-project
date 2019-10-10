@@ -7,6 +7,8 @@ import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.car.engine.Engine;
+import uniud.distribuiti.lastmile.car.fuel.FuelTank;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
@@ -27,8 +29,8 @@ public class Car extends AbstractActor {
     }
 
     private Location location;
-    private Double fuel; // Carburante in litri
-    private final Double kmPerLiter = 14.0;
+    private final FuelTank fuelTank;
+    private final Engine engine;
 
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
@@ -39,8 +41,9 @@ public class Car extends AbstractActor {
         ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
 
-        // Inizializzazione standard carburante macchina
-        this.fuel = 20.0;
+        // Inizializzazione standard proprietà macchina
+        this.fuelTank = new FuelTank(20.00);
+        this.engine = new Engine(14.00);
         LocationHelper locationHelper = new LocationHelper();
         this.location = locationHelper.assignLocation();
     }
@@ -114,9 +117,11 @@ public class Car extends AbstractActor {
     }
 
     private boolean haveEnoughFuel(int km){
-        double fuelConsumption = km / this.kmPerLiter;
-        double elapsedFuel = this.fuel - fuelConsumption;
-        return (elapsedFuel) < 0 ? false : true;
+        // Fuel consumption data dal tipo di engine
+        // Il kilometraggio è dato dal percorso che deve fare
+        // Il risultato è dato dall'interazione tra FuelTank e Engine
+        double fuelConsumption = engine.fuelConsumption(km);
+        return fuelTank.hasEnoughFuel(fuelConsumption);
     }
 
     private void transportCompleted(TransportCoordination.DestinationReached msg){
