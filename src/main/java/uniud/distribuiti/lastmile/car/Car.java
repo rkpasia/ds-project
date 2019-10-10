@@ -15,6 +15,7 @@ import uniud.distribuiti.lastmile.location.LocationHelper;
 import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 import java.io.Serializable;
+import java.time.Duration;
 
 public class Car extends AbstractActor {
 
@@ -77,6 +78,8 @@ public class Car extends AbstractActor {
         }
     }
 
+    public static class RefuelCompleted {}
+
     private void carBooking(TransportCoordination.CarBookingRequestMsg msg){
 
         log.info("RICEVUTA RICHIESTA DI BOOKING");
@@ -132,7 +135,14 @@ public class Car extends AbstractActor {
         // Verifica se c'è necessità di fare rifornimento
         if (fuelTank.needFuel()) {
             this.status = CarStatus.REFUEL;
-            // TODO: Implementare lo scheduling di un messaggio che conclude il processo di refueling
+            context().system().scheduler()
+                    .scheduleOnce(
+                            Duration.ofSeconds(10),
+                            getSelf(),
+                            new Car.RefuelCompleted(),
+                            context().system().dispatcher(),
+                            null
+                    );
         } else {
             this.status = CarStatus.AVAILABLE;
         }
@@ -153,6 +163,11 @@ public class Car extends AbstractActor {
 
     }
 
+    private void carRefuelCompleted(RefuelCompleted msg){
+        this.fuelTank.refuel();
+        this.status = CarStatus.AVAILABLE;
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -162,6 +177,7 @@ public class Car extends AbstractActor {
                 .match(TransportCoordination.DestinationReached.class, this::transportCompleted)
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
+                .match(RefuelCompleted.class, this::carRefuelCompleted)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }
