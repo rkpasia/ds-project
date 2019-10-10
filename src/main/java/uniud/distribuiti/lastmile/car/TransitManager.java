@@ -56,7 +56,7 @@ public class TransitManager extends AbstractActorWithTimers {
 
     private void endTransit() {
         Location destination = new Location(this.route.getCurrentNode());
-        getContext().parent().tell(new TransportCoordination.DestinationReached(destination), getSelf());
+        getContext().parent().tell(new TransportCoordination.DestinationReached(destination, route.getRoute().getDistance()), getSelf());
         passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
         getTimers().cancelAll();
         context().stop(getSelf());

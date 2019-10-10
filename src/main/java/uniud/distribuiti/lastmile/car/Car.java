@@ -23,7 +23,7 @@ public class Car extends AbstractActor {
     private CarStatus status;
     public enum CarStatus {
         AVAILABLE,
-        BOOKED,
+        REFUEL,
         TRANSIT,
         BROKEN
     }
@@ -127,8 +127,15 @@ public class Car extends AbstractActor {
     private void transportCompleted(TransportCoordination.DestinationReached msg){
         this.location.setNode(msg.getLocation().getNode());
         log.info("PASSEGGERO TRASPORTATO A DESTINAZIONE");
-        this.status = CarStatus.AVAILABLE;
-        // TODO: La macchina deve aggiornare il proprio carburante
+        // Aggiorna carburante rimasto all'interno del serbatoio
+        this.fuelTank.fuelConsumed(engine.fuelConsumption(msg.getDistanceCovered()));
+        // Verifica se c'è necessità di fare rifornimento
+        if (fuelTank.needFuel()) {
+            this.status = CarStatus.REFUEL;
+            // TODO: Implementare lo scheduling di un messaggio che conclude il processo di refueling
+        } else {
+            this.status = CarStatus.AVAILABLE;
+        }
     }
 
     // Gestione guasto anomalo macchina

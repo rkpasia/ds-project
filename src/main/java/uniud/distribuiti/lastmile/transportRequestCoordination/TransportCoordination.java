@@ -69,14 +69,22 @@ public class TransportCoordination implements Serializable {
     public static class DestinationReached extends TransportCoordination {
 
         private final Location location;
+        private final int distance;
 
         public DestinationReached(Location location){
+            this(location, 0);
+        }
+
+        public DestinationReached(Location location, int km){
             this.location = location;
+            this.distance = km;
         }
 
         public Location getLocation() {
             return location;
         }
+
+        public int getDistanceCovered() { return this.distance; }
     }
 
 }
