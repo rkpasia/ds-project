@@ -4,8 +4,10 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import uniud.distribuiti.lastmile.cluster.ClusterServiceMessages;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
+import java.time.Duration;
 import java.util.ArrayList;
 
 
@@ -24,6 +26,10 @@ public class TransportRequest extends AbstractActor {
     }
 
     private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
+    private int requestCallbacks = 0;
+    private final int MAX_REQUEST_CALLBACKS = 6;
+
+    public static class RequestMonitoring {}
 
     public static Props props(){
         return Props.create(TransportRequest.class, () -> new TransportRequest());
@@ -36,6 +42,31 @@ public class TransportRequest extends AbstractActor {
     @Override
     public void preStart(){
         System.out.println("TRANSPORT REQUEST STARTED");
+        requestMonitoring();
+    }
+
+    private void requestMonitoring() {
+        getContext().system().scheduler().scheduleOnce(
+                Duration.ofSeconds(5),
+                getSelf(),
+                new TransportRequest.RequestMonitoring(),
+                getContext().system().dispatcher(),
+                getSelf()
+        );
+    }
+
+    private void monitorRequestStatus(RequestMonitoring msg){
+        if(status == TransportRequestStatus.EMITTED && availableCars.isEmpty()){
+            log.info("NESSUNA DISPONIBILITA RICEVUTA, RIPROVO");
+            getContext().parent().tell(new Passenger.EmitRequestMessage(), getSelf());
+            this.requestCallbacks += 1;
+            if(requestCallbacks <= MAX_REQUEST_CALLBACKS){
+                requestMonitoring();
+            } else {
+                log.info("TENTATIVI MASSIMI RAGGIUNTI");
+                getContext().parent().tell(new ClusterServiceMessages.NoCarsAvailable(), getSelf());
+            }
+        }
     }
 
     private void evaluateCar(TransportCoordination.CarAvailableMsg msg){
@@ -115,6 +146,10 @@ public class TransportRequest extends AbstractActor {
                 .match(
                         TransportCoordination.CarUnavailableMsg.class,
                         this::carUnavaiable
+                )
+                .match(
+                        TransportRequest.RequestMonitoring.class,
+                        this::monitorRequestStatus
                 )
                 .matchAny(
                         o -> {

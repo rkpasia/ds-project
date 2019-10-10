@@ -8,6 +8,7 @@ import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.car.Car;
+import uniud.distribuiti.lastmile.cluster.ClusterServiceMessages;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.LocationHelper;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
@@ -80,6 +81,11 @@ public class Passenger extends AbstractActor {
         // A questo punto l'utente può scegliere dall'applicazione la macchina nuova
     }
 
+    private void noTransportAvailable(ClusterServiceMessages msg){
+        log.info("NESSUNA MACCHINA DISPONIBILE PER OFFRIRE IL SERVIZIO DI TRASPORTO, RIPROVARE PIU' TARDI");
+        getContext().stop(transportRequest);
+    }
+
     @Override
     public Receive createReceive(){
 
@@ -90,6 +96,7 @@ public class Passenger extends AbstractActor {
                 .match(TransportCoordination.DestinationReached.class, this::destinationReached)
                 .match(Car.BrokenLocation.class, this::carBrokenInLocation)
                 .match(Car.CarBreakDown.class, this::carBroken)
+                .match(ClusterServiceMessages.NoCarsAvailable.class, this::noTransportAvailable)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }
