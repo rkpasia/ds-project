@@ -42,7 +42,7 @@ public class Car extends AbstractActor {
         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", getSelf()), getSelf());
 
         // Inizializzazione standard proprietà macchina
-        this.fuelTank = new FuelTank(20.00);
+        this.fuelTank = new FuelTank(20);
         this.engine = new Engine(14.00);
         LocationHelper locationHelper = new LocationHelper();
         this.location = locationHelper.assignLocation();
