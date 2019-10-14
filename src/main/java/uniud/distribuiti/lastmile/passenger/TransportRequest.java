@@ -1,7 +1,9 @@
 package uniud.distribuiti.lastmile.passenger;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.cluster.ClusterServiceMessages;
@@ -28,6 +30,7 @@ public class TransportRequest extends AbstractActor {
     private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
     private int requestCallbacks = 0;
     private final int MAX_REQUEST_CALLBACKS = 6;
+    private ActorRef selectedCarManager;
 
     public static class RequestMonitoring {}
 
@@ -76,6 +79,8 @@ public class TransportRequest extends AbstractActor {
         // e le info della macchina
         availableCars.add(new CarInformation(msg.getRouteLength(), getSender()));
 
+        // Monitoring del manager che mi ha dato disponibilità
+        getContext().watch(getSender());
     }
 
     private void carUnavaiable(TransportCoordination msg){
@@ -96,6 +101,7 @@ public class TransportRequest extends AbstractActor {
             CarInformation car = availableCars.get(0);
 
             car.getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSender());
+            selectedCarManager = car.getTransportRequestManager();
             this.status = TransportRequestStatus.BOOKING;
             log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
         } else {
@@ -124,6 +130,28 @@ public class TransportRequest extends AbstractActor {
         //  Bisogna avvisare il passeggero (quindi dare feedback anche all'utente)
     }
 
+    // Metodo per la gestione terminazioni attori in monitoraggio
+    private void terminationHandling(Terminated msg){
+
+        // Terminazione di un manager
+        // Se termina durante lo stato di emissione...
+        if(this.status == TransportRequestStatus.EMITTED){
+            // lo rimuovo semplicemente dalla lista di selezionabili
+            availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
+        }
+
+        if(this.status == TransportRequestStatus.BOOKING){
+            // Se sto prenotando...
+            // e il manager della macchina che sto provando a prenotare muore..
+            // allora devo fare qualcosa
+            if(selectedCarManager.equals(msg.actor())){
+                // TODO: Il manager è lo stesso che sto provando a prenotare...
+                //  annullare tutta l'operazione
+            }
+        }
+
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -150,6 +178,10 @@ public class TransportRequest extends AbstractActor {
                 .match(
                         TransportRequest.RequestMonitoring.class,
                         this::monitorRequestStatus
+                )
+                .match(
+                        Terminated.class,
+                        this::terminationHandling
                 )
                 .matchAny(
                         o -> {
