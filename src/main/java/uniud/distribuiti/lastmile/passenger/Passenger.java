@@ -53,7 +53,7 @@ public class Passenger extends AbstractActor {
     // Inoltro richiesta con riferimento all attore figlio gestore della mia richiesta
     private void emitTransportRequest(EmitRequestMessage msg){
         if(this.transportRequest == null || this.transportRequest.isTerminated()){
-            transportRequest = getContext().actorOf(TransportRequest.props(), "TRANSPORT_REQUEST@" + self().path().name());
+            transportRequest = getContext().actorOf(TransportRequest.props(), "TRANSPORT_REQUEST@" + self().path().uid());
             getContext().watch(transportRequest);
         }
 
