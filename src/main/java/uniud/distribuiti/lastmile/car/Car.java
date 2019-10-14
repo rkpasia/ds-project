@@ -1,8 +1,6 @@
 package uniud.distribuiti.lastmile.car;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import akka.actor.*;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
@@ -113,7 +111,9 @@ public class Car extends AbstractActor {
                 Boolean existChild = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).isPresent();
                 if(! existChild) {
                     log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-                    getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+                    ActorRef manager = getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+                    // Monitoring figlio
+                    getContext().watch(manager);
                 }else  log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO");
             }
         }
@@ -168,6 +168,19 @@ public class Car extends AbstractActor {
         this.status = CarStatus.AVAILABLE;
     }
 
+    // Metodo gestione terminazione attori che sta monitorando
+    private void terminationHandling(Terminated msg){
+
+        // Gestione terminazione TransportRequestManager
+        // TODO: Come individuo il manager?
+
+        // Gestione terminazione TransitManager
+        // Che cosa succede quando muore il transit manager? Che cosa vuol dire?
+        // TODO: Implementazione gestione morte transit Manager
+        
+
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -178,6 +191,7 @@ public class Car extends AbstractActor {
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
                 .match(RefuelCompleted.class, this::carRefuelCompleted)
+                .match(Terminated.class, this::terminationHandling)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }
