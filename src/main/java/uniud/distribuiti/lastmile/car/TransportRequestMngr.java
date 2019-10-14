@@ -3,6 +3,8 @@ package uniud.distribuiti.lastmile.car;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
@@ -47,6 +49,10 @@ public class TransportRequestMngr extends AbstractActor {
         this.passengerLocation = passengerLocation;
         this.status = RequestManagerStatus.WAITING;
         this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(route.getDistance()), getSelf());
+
+        // Iscrizione a ABORT_REQUEST channel
+        ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
+        mediator.tell(new DistributedPubSubMediator.Subscribe("ABORT_REQUEST", getSelf()), getSelf());
     }
 
     // Metodo di gestione e forwarding della richiesta di prenotazione
@@ -82,6 +88,15 @@ public class TransportRequestMngr extends AbstractActor {
         }
     }
 
+    // Ricezione annullamento richiesta di trasporto
+    private void abortRequest(TransportCoordination msg){
+        // Verifica associazione richiesta
+        if(transportRequest.equals(getSender())){
+            // Interrompi il manager
+            getContext().stop(getSelf());
+        }
+    }
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
@@ -100,6 +115,11 @@ public class TransportRequestMngr extends AbstractActor {
                         TransportCoordination.CarBookingRejectMsg.class,
                         this::manageBookingRequest
                 )
+                .match(
+                        TransportCoordination.AbortTransportRequest.class,
+                        this::abortRequest
+                )
+                .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("ISCRITTO P<->S"))
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }

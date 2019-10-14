@@ -117,15 +117,13 @@ public class Passenger extends AbstractActor {
             // allora c'è qualcosa che non va.
             // Devo riprendere l'operazione da capo
 
-            // TODO: Notifica broadcast della terminazione transport request?
-            //  Faccio ammazzare tutti i manager associati a questa transport request?
-            //  Probabilmente soluzione più semplice.
-
+            getContext().unwatch(msg.getActor());
+            mediator.tell(new DistributedPubSubMediator.Publish("ABORT_REQUEST", new TransportCoordination.AbortTransportRequest()), msg.getActor());
             // Emissione nuova transport request
-            // getSelf().tell(new EmitRequestMessage(), getSelf());
+            getSelf().tell(new EmitRequestMessage(), getSelf());
         }
 
-        // Se TransportRequest termina mentre il mio stato è SELECTION_REQUESTED?
+        // TODO: Se TransportRequest termina mentre il mio stato è SELECTION_REQUESTED?
         // Tutta una serie di conseguenze devono essere considerate
 
     }
