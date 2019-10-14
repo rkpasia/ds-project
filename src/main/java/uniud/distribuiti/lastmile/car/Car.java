@@ -173,6 +173,9 @@ public class Car extends AbstractActor {
 
         // Gestione terminazione TransportRequestManager
         // TODO: Come individuo il manager?
+        // Se termina il manager, e io sono in trasporto per quel manager
+        // Potrebbe essere che il passeggero non sappia che io ho accettato
+        // di trasportarlo...
 
         // Gestione terminazione TransitManager
         // Che cosa succede quando muore il transit manager? Che cosa vuol dire?

@@ -125,6 +125,9 @@ public class Passenger extends AbstractActor {
             // getSelf().tell(new EmitRequestMessage(), getSelf());
         }
 
+        // Se TransportRequest termina mentre il mio stato è SELECTION_REQUESTED?
+        // Tutta una serie di conseguenze devono essere considerate
+
     }
 
     @Override
