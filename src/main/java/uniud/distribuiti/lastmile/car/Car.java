@@ -148,6 +148,13 @@ public class Car extends AbstractActor {
         }
     }
 
+    private void abortTransportRequest(TransportCoordination msg){
+        // Ricevo dal manager il messaggio di annullamento della transport request
+        // Fermo il manager
+        getContext().unwatch(getSender());
+        getContext().stop(getSender());
+    }
+
     // Gestione guasto anomalo macchina
     private void carBroken(CarBreakDown msg){
         log.info("MACCHINA GUASTA");
@@ -188,9 +195,10 @@ public class Car extends AbstractActor {
     public Receive createReceive(){
         return receiveBuilder()
                 .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("ISCRITTO RICEZIONE RICHIESTE"))
-                .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportRequestMessage.class, this::evaluateRequest)
+                .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportCoordination.DestinationReached.class, this::transportCompleted)
+                .match(TransportCoordination.AbortTransportRequest.class, this::abortTransportRequest)
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
                 .match(RefuelCompleted.class, this::carRefuelCompleted)

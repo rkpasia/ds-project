@@ -70,7 +70,7 @@ public class TransportRequestMngr extends AbstractActor {
 
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
-            this.status = RequestManagerStatus.AVAILABLE;
+            this.status = RequestManagerStatus.CONFIRMED;
             transportRequest.tell(msg, getContext().getParent());
         }
 
@@ -93,7 +93,7 @@ public class TransportRequestMngr extends AbstractActor {
         // Verifica associazione richiesta
         if(transportRequest.equals(getSender())){
             // Interrompi il manager
-            getContext().stop(getSelf());
+            getContext().parent().tell(msg, getSelf());
         }
     }
 
