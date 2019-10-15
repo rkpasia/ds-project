@@ -73,6 +73,19 @@ public class Passenger extends AbstractActor {
         this.status = PassengerStatus.SELECTION_REQUESTED;
     }
 
+    private void bookingConfirmed(TransportCoordination msg){
+        // Se il passeggero è già in WAITING non effettuare l'aggiornamento
+        if(this.status == PassengerStatus.WAITING_CAR) return;
+        // Il passeggero entra in attesa della macchina prenotata
+        this.status = PassengerStatus.WAITING_CAR;
+        this.car = getSender();
+        // La TransportRequest ha completato il suo scopo
+        if (!transportRequest.isTerminated()) {
+            getContext().unwatch(transportRequest);
+            getContext().stop(transportRequest);
+        }
+    }
+
     private void carSelectionStopped(SelectionStopped msg){
         // La selezione della macchina si è interrotta per un problema
         // Devo selezionare un altra macchina
@@ -83,7 +96,7 @@ public class Passenger extends AbstractActor {
     }
 
     private void carArrived(TransportCoordination msg){
-        this.car = getSender();     // Riferimento alla macchina che mi sta trasportando
+        //this.car = getSender();     // Riferimento alla macchina che mi sta trasportando
         // Passenger is now in transit
         this.status = PassengerStatus.IN_TRANSPORT;
     }
@@ -145,6 +158,7 @@ public class Passenger extends AbstractActor {
         return receiveBuilder()
                 .match(EmitRequestMessage.class, this::emitTransportRequest)
                 .match(SelectCarMessage.class, this::selectCar)
+                .match(TransportCoordination.CarBookingConfirmedMsg.class, this::bookingConfirmed)
                 .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
                 .match(TransportCoordination.DestinationReached.class, this::destinationReached)
                 .match(Car.BrokenLocation.class, this::carBrokenInLocation)
