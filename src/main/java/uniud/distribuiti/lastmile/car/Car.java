@@ -8,10 +8,11 @@ import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.car.engine.Engine;
 import uniud.distribuiti.lastmile.car.fuel.FuelTank;
 import uniud.distribuiti.lastmile.location.Location;
-import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
+import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
+
 import java.io.Serializable;
 import java.time.Duration;
 
@@ -24,12 +25,15 @@ public class Car extends AbstractActor {
         AVAILABLE,
         REFUEL,
         TRANSIT,
+        TRANSIT_WITH_PASSENGER,
         BROKEN
     }
 
     private Location location;
     private final FuelTank fuelTank;
     private final Engine engine;
+    private  ActorRef passenger;
+    private  TransitManager transitData;
 
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
@@ -91,10 +95,15 @@ public class Car extends AbstractActor {
                 else getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
             });
 
+            this.transitData = new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger);
             // Creazione TransitManager
-            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger)), "TRANSIT_MANAGER");
+            ActorRef transit = getContext().actorOf(Props.create(TransitManager.class, () ->  transitData), "TRANSIT_MANAGER");
             // Macchina inizia transito verso passeggero
+            getContext().watch(transit);
+            getContext().watch(msg.passenger);
             this.status = CarStatus.TRANSIT;
+            this.passenger = msg.passenger;
+
         } else {
             log.info("NON SONO DISPONIBILE");
             getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());
@@ -146,6 +155,8 @@ public class Car extends AbstractActor {
         } else {
             this.status = CarStatus.AVAILABLE;
         }
+        getContext().unwatch(passenger);
+        getContext().unwatch(getSender());
     }
 
     private void abortTransportRequest(TransportCoordination msg){
@@ -178,6 +189,35 @@ public class Car extends AbstractActor {
     // Metodo gestione terminazione attori che sta monitorando
     private void terminationHandling(Terminated msg){
 
+        log.info("RILEVATA LA MORTE DI UN ATTORE");
+
+
+        if(msg.toString().contains("TRANSPORT_REQUEST_MANAGER")){
+            if(this.status == CarStatus.TRANSIT )
+                log.info("MORTE DEL TRANSPORT REQUEST MANAGER");
+
+        }else if(msg.toString().contains("TRANSIT_MANAGER")){
+            if(this.status == CarStatus.TRANSIT || this.status == CarStatus.TRANSIT_WITH_PASSENGER){
+                getContext().unwatch(msg.actor());
+                ActorRef transit = getContext().actorOf(Props.create(TransitManager.class, () ->  transitData), "TRANSIT_MANAGER");
+                getContext().watch(transit);
+            }
+        }else if(msg.actor().equals(passenger)){
+            if(this.status == CarStatus.TRANSIT){
+                // se muore il passeggero e non sono ancora da lui annullo la richiesta
+                this.status =  CarStatus.AVAILABLE;
+                getContext().getChildren().forEach(child -> {
+                    if(child.toString().contains("TRANSIT_MANAGER")){
+                        getContext().unwatch(child);
+                        getContext().stop(child);
+                    }
+                });
+
+
+                // nel caso siamo in transit con il passeggero a bordo completo comunque il trasporto
+            }
+        }
+
         // Gestione terminazione TransportRequestManager
         // TODO: Come individuo il manager?
         // Se termina il manager, e io sono in trasporto per quel manager
@@ -187,7 +227,7 @@ public class Car extends AbstractActor {
         // Gestione terminazione TransitManager
         // Che cosa succede quando muore il transit manager? Che cosa vuol dire?
         // TODO: Implementazione gestione morte transit Manager
-        
+
 
     }
 
@@ -202,6 +242,7 @@ public class Car extends AbstractActor {
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
                 .match(RefuelCompleted.class, this::carRefuelCompleted)
+                .match(TransportCoordination.CarArrivedToPassenger.class, msg -> {this.status= CarStatus.TRANSIT_WITH_PASSENGER;})
                 .match(Terminated.class, this::terminationHandling)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
