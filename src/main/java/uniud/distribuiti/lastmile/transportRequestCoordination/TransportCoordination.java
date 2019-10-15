@@ -90,4 +90,14 @@ public class TransportCoordination implements Serializable {
 
     public static class AbortTransportRequest extends TransportCoordination {}
 
+    public static class UpdateLocation extends TransportCoordination {
+
+        public final int location;
+
+        public UpdateLocation(int newLocation){
+            this.location = newLocation;
+        }
+
+    }
+
 }

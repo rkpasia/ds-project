@@ -140,6 +140,10 @@ public class Car extends AbstractActor {
         return fuelTank.hasEnoughFuel(fuelConsumption);
     }
 
+    private void updateLocation(TransportCoordination.UpdateLocation msg){
+        this.location.setNode(msg.location);
+    }
+
     private void transportCompleted(TransportCoordination.DestinationReached msg){
         this.location.setNode(msg.getLocation().getNode());
         log.info("PASSEGGERO TRASPORTATO A DESTINAZIONE");
@@ -160,7 +164,8 @@ public class Car extends AbstractActor {
             this.status = CarStatus.AVAILABLE;
         }
         getContext().unwatch(passenger);
-        getContext().unwatch(getSender());
+        getContext().unwatch(transitManager);
+        getContext().stop(transitManager);
     }
 
     private void abortTransportRequest(TransportCoordination msg){
@@ -209,17 +214,11 @@ public class Car extends AbstractActor {
         // Che cosa succede quando muore il transit manager? Che cosa vuol dire?
         if(transitManager.equals(msg.getActor())){
             log.warning("TRANSIT_MANAGER TERMINATO");
-            // Se la macchina è in transito, ripristino il TransitManager
-            if(this.status == CarStatus.TRANSIT_TO_PASSENGER || this.status == CarStatus.TRANSIT_WITH_PASSENGER){
-                //getContext().unwatch(msg.actor());
-
-                // TODO: Sistemare il ripristino dello spostamento della macchina
-                // Se creo completamente un nuovo TransitManager con le stesse informazioni di partenza, la macchina
-                // risulterà "teletrasportata" a capo anche se si è già spostata nel grafo nel frattempo
-
-                //ActorRef transit = getContext().actorOf(Props.create(TransitManager.class, () ->  transitData), "TRANSIT_MANAGER");
-                //getContext().watch(transit);
-            }
+            // Supponiamo che la terminazione del TransitManager implichi un problema fisico della macchina
+            // Se in transito con il passeggero, notifico dove è avvenuto il guasto
+            if (this.status == CarStatus.TRANSIT_WITH_PASSENGER) passenger.tell(new Car.BrokenLocation(this.location), getSelf());
+            // Se in transito verso il passeggero, notifico che la macchina ha avuto un guasto
+            else if (this.status == CarStatus.TRANSIT_TO_PASSENGER) passenger.tell(new Car.CarBreakDown(), getSelf());
         }
 
         // Il passeggero di questa macchina è terminato e la macchina sta arrivando da lui
@@ -244,6 +243,7 @@ public class Car extends AbstractActor {
                 .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportCoordination.DestinationReached.class, this::transportCompleted)
                 .match(TransportCoordination.AbortTransportRequest.class, this::abortTransportRequest)
+                .match(TransportCoordination.UpdateLocation.class, this::updateLocation)
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
                 .match(RefuelCompleted.class, this::carRefuelCompleted)

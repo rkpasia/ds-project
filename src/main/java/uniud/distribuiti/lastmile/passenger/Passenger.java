@@ -95,6 +95,10 @@ public class Passenger extends AbstractActor {
         this.status = PassengerStatus.REQUEST_EMITTED;  // Torno a stato di richiesta emessa
     }
 
+    private void updateLocation(TransportCoordination.UpdateLocation msg){
+        this.location.setNode(msg.location);
+    }
+
     private void carArrived(TransportCoordination msg){
         //this.car = getSender();     // Riferimento alla macchina che mi sta trasportando
         // Passenger is now in transit
@@ -161,6 +165,7 @@ public class Passenger extends AbstractActor {
                 .match(TransportCoordination.CarBookingConfirmedMsg.class, this::bookingConfirmed)
                 .match(TransportCoordination.CarArrivedToPassenger.class, this::carArrived)
                 .match(TransportCoordination.DestinationReached.class, this::destinationReached)
+                .match(TransportCoordination.UpdateLocation.class, this::updateLocation)
                 .match(Car.BrokenLocation.class, this::carBrokenInLocation)
                 .match(Car.CarBreakDown.class, this::carBroken)
                 .match(SelectionStopped.class, this::carSelectionStopped)

@@ -51,6 +51,10 @@ public class TransitManager extends AbstractActorWithTimers {
         // Quando ha raggiunto la fine del tragitto, informa macchina e passeggero
         if(!hasNext){
             endTransit();
+        } else {
+            // Avviso la macchina e il passeggero della nuova location raggiunta
+            passenger.tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
+            getContext().parent().tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
         }
 
     }
@@ -60,7 +64,6 @@ public class TransitManager extends AbstractActorWithTimers {
         getContext().parent().tell(new TransportCoordination.DestinationReached(destination, route.getRoute().getDistance()), getSelf());
         passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
         getTimers().cancelAll();
-        context().stop(getSelf());
     }
 
     private void carBroken(Car.CarBreakDown msg){
