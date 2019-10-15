@@ -200,7 +200,8 @@ public class Car extends AbstractActor {
         // potrebbe essere che il passeggero non sappia che io ho accettato di trasportarlo.
         // La terminazione di qualsiasi altro TransitManager non è un problema rilevante.
         if(bookingManager.equals(msg.getActor()) && this.status == CarStatus.TRANSIT_TO_PASSENGER){
-            // TODO: Gestione notifica passeggero di una ulteriore conferma
+            // Invio una conferma per certezza al passeggero
+            passenger.tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
         }
 
         // TransitManager è terminato
