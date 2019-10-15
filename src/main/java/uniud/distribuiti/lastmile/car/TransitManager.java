@@ -44,6 +44,7 @@ public class TransitManager extends AbstractActorWithTimers {
         // Raggiunta la location del passeggero, informalo che la macchina è arrivata
         if(this.route.getCurrentNode() == this.passengerLocation.getNode()) {
             passenger.tell(new TransportCoordination.CarArrivedToPassenger(), getContext().parent());
+            getContext().getParent().tell(new TransportCoordination.CarArrivedToPassenger(), getContext().parent());
             this.PASSENGER_ONBOARD = true;
         }
 
