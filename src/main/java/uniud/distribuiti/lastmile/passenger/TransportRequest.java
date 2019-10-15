@@ -138,6 +138,9 @@ public class TransportRequest extends AbstractActor {
         if(this.status == TransportRequestStatus.EMITTED){
             // lo rimuovo semplicemente dalla lista di selezionabili
             availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
+
+            // Possibile la valutazione di nuova richiesta alla macchina per sapere la disponibilità nuovamente
+            // (non strettamente necessario)
         }
 
         if(this.status == TransportRequestStatus.BOOKING){
