@@ -35,7 +35,7 @@ public class Car extends AbstractActor {
     private final Engine engine;
     private ActorRef passenger;
     private ActorRef bookingManager;
-    private  TransitManager transitData;
+    private ActorRef transitManager;
 
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
@@ -97,12 +97,14 @@ public class Car extends AbstractActor {
                 else getSender().tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
             });
 
-            this.transitData = new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger);
             // Creazione TransitManager
-            ActorRef transit = getContext().actorOf(Props.create(TransitManager.class, () ->  transitData), "TRANSIT_MANAGER");
-            // Macchina inizia transito verso passeggero
-            getContext().watch(transit);
+            transitManager = getContext().actorOf(TransitManager.props(new TransportRoute(msg.route), msg.location, msg.passenger), "TRANSIT_MANAGER");
+
+            // Monitoring attori TransitManager e Passeggero
+            getContext().watch(transitManager);
             getContext().watch(msg.passenger);
+
+            // Aggiornamento variabili di stato
             this.status = CarStatus.TRANSIT_TO_PASSENGER;
             this.passenger = msg.passenger;
             this.bookingManager = getSender();
@@ -191,10 +193,8 @@ public class Car extends AbstractActor {
     // Metodo gestione terminazione attori che sta monitorando
     private void terminationHandling(Terminated msg){
 
-        log.info("RILEVATA LA MORTE DI UN ATTORE");
-
-        String actorReferenceName = msg.actor().path().name();
-
+        log.info("RILEVATA LA MORTE DI UN ATTORE " + msg.actor().path().name());
+        
         // Gestione terminazione TransportRequestManager
         // Se termina il manager che ha prenotato la macchina, ed essa è in transito verso il passeggero
         // potrebbe essere che il passeggero non sappia che io ho accettato di trasportarlo.
@@ -207,13 +207,18 @@ public class Car extends AbstractActor {
         // TransitManager è terminato
         // Gestione terminazione TransitManager
         // Che cosa succede quando muore il transit manager? Che cosa vuol dire?
-        if(actorReferenceName.contains("TRANSIT_MANAGER")){
+        if(transitManager.equals(msg.getActor())){
             log.warning("TRANSIT_MANAGER TERMINATO");
             // Se la macchina è in transito, ripristino il TransitManager
             if(this.status == CarStatus.TRANSIT_TO_PASSENGER || this.status == CarStatus.TRANSIT_WITH_PASSENGER){
-                getContext().unwatch(msg.actor());
-                ActorRef transit = getContext().actorOf(Props.create(TransitManager.class, () ->  transitData), "TRANSIT_MANAGER");
-                getContext().watch(transit);
+                //getContext().unwatch(msg.actor());
+
+                // TODO: Sistemare il ripristino dello spostamento della macchina
+                // Se creo completamente un nuovo TransitManager con le stesse informazioni di partenza, la macchina
+                // risulterà "teletrasportata" a capo anche se si è già spostata nel grafo nel frattempo
+
+                //ActorRef transit = getContext().actorOf(Props.create(TransitManager.class, () ->  transitData), "TRANSIT_MANAGER");
+                //getContext().watch(transit);
             }
         }
 
