@@ -148,11 +148,23 @@ public class TransportRequest extends AbstractActor {
             // e il manager della macchina che sto provando a prenotare muore..
             // allora devo fare qualcosa
             if(selectedCarManager.equals(msg.actor())){
-                // TODO: Il manager è lo stesso che sto provando a prenotare...
-                //  annullare tutta l'operazione
+                // Lo rimuovo dalle macchine disponibili
+                availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
+                // Avvisare il passeggero che la selezione della macchina ha avuto un problema
+                carBookingHasStopped();
             }
+
+            // Se non lo stavo prenotando, rimuovo semplicemente
+            availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
         }
 
+    }
+
+    // La prenotazione di una macchina ha avuto un problema
+    private void carBookingHasStopped(){
+        // Avviso il passeggero che la selezione della macchina si è interrotta
+        getContext().parent().tell(new Passenger.SelectionStopped(), getSelf());
+        this.status = TransportRequestStatus.EMITTED;
     }
 
     @Override

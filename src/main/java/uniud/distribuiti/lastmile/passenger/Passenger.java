@@ -26,6 +26,8 @@ public class Passenger extends AbstractActor {
 
     public static class SelectCarMessage {}
 
+    public static class SelectionStopped {}
+
     private ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     private ActorRef transportRequest;
@@ -69,6 +71,15 @@ public class Passenger extends AbstractActor {
         log.info("SCELGO LA MACCHINA");
         transportRequest.tell(new TransportCoordination.SelectCarMsg(), getSelf());
         this.status = PassengerStatus.SELECTION_REQUESTED;
+    }
+
+    private void carSelectionStopped(SelectionStopped msg){
+        // La selezione della macchina si è interrotta per un problema
+        // Devo selezionare un altra macchina
+        // TODO: Avviso interfaccia che la selezione della macchina si è interrotta
+        log.error("SELEZIONE MACCHINA INTERROTTA, PROVARE CON UN ALTRA MACCHINA");
+        // Dovrà arrivare un nuovo messaggio di richiesta selezione dall'utente
+        this.status = PassengerStatus.REQUEST_EMITTED;  // Torno a stato di richiesta emessa
     }
 
     private void carArrived(TransportCoordination msg){
@@ -138,6 +149,7 @@ public class Passenger extends AbstractActor {
                 .match(TransportCoordination.DestinationReached.class, this::destinationReached)
                 .match(Car.BrokenLocation.class, this::carBrokenInLocation)
                 .match(Car.CarBreakDown.class, this::carBroken)
+                .match(SelectionStopped.class, this::carSelectionStopped)
                 .match(ClusterServiceMessages.NoCarsAvailable.class, this::noTransportAvailable)
                 .match(Terminated.class, this::terminationHandling)
                 .matchAny(o -> log.info("received unknown message"))
