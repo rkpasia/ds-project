@@ -51,11 +51,12 @@ public class TransitManager extends AbstractActorWithTimers {
         // Quando ha raggiunto la fine del tragitto, informa macchina e passeggero
         if(!hasNext){
             endTransit();
-        } else {
+        } else if(this.PASSENGER_ONBOARD) {
             // Avviso la macchina e il passeggero della nuova location raggiunta
             passenger.tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
             getContext().parent().tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
-        }
+        } else getContext().parent().tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
+
 
     }
 
@@ -82,7 +83,6 @@ public class TransitManager extends AbstractActorWithTimers {
                 .match(
                         StartTick.class,
                         msg -> {
-                            // TODO: Avviso macchina inizio trasporto per fare update del suo stato (opzionale)
                             getTimers().startPeriodicTimer(TICK_KEY, new TransitTick(), Duration.ofSeconds(5));
                         }
                 )

@@ -48,6 +48,7 @@ public class TransportRequestOperationErrorTest  {
 
                 TestKit fakePassenger = new TestKit(system);
                 TestKit fakeCar = new TestKit(system);
+                TestKit fakeTr = new TestKit(system);
 
                 //iscriviamo la finta macchina ad un pubsub come la vera macchina
                 // ci aspettiamo che l'iscrizione vada a buon fine
