@@ -123,20 +123,16 @@ public class Car extends AbstractActor {
             log.info("VALUTAZIONE " + msg.toString());
             Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
             if (haveEnoughFuel(route.getDistance())) {
-                ActorRef oldManager = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).orElse(null);
+                boolean existManager = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" +getSender().path().uid()).isPresent();
                 // se mi arriva una nuova richiesta di trasporto ma ho gia un trm associato alla macchina
                 // il passeggero potrebbe aver avuto un problema quindi fermo e ricreo il trm
-                if(oldManager == null) {
+                if(! existManager) {
                     log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-                    ActorRef manager = getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
+                    ActorRef manager = getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().uid());
                     // Monitoring manager
                     getContext().watch(manager);
                 }else{
-                    log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO, RICREO");
-                    getContext().unwatch(oldManager);
-                    getContext().stop(oldManager);
-
-                    getContext().getSelf().tell(msg,getSender());
+                    log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO");
                 }
             }
         }
@@ -176,11 +172,14 @@ public class Car extends AbstractActor {
         getContext().unwatch(passenger);
         getContext().unwatch(transitManager);
         getContext().stop(transitManager);
+        if(!bookingManager.isTerminated())
+            getContext().stop(bookingManager);
     }
 
     private void abortTransportRequest(TransportCoordination msg){
         // Ricevo dal manager il messaggio di annullamento della transport request
         // Fermo il manager
+        log.info("ABORT TRANSPORT REQUEST " + getSender().path().name());
         getContext().unwatch(getSender());
         getContext().stop(getSender());
     }
@@ -242,16 +241,10 @@ public class Car extends AbstractActor {
             }
             // Macchina torna disponibile
             this.status = CarStatus.AVAILABLE;
-        }else{
-            //siamo nel caso in cui è fallito un transport request manger
-            Boolean existChild = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).isPresent();
-            if(existChild){
-                getContext().unwatch(msg.getActor());
-                getContext().stop(msg.getActor());
-            }
-
         }
     }
+
+
 
     @Override
     public Receive createReceive(){
