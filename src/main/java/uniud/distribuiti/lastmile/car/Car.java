@@ -1,6 +1,9 @@
 package uniud.distribuiti.lastmile.car;
 
-import akka.actor.*;
+import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
+import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
@@ -15,7 +18,6 @@ import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordina
 
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.ArrayList;
 
 public class Car extends AbstractActor {
 
@@ -121,13 +123,21 @@ public class Car extends AbstractActor {
             log.info("VALUTAZIONE " + msg.toString());
             Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
             if (haveEnoughFuel(route.getDistance())) {
-                Boolean existChild = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).isPresent();
-                if(! existChild) {
+                ActorRef oldManager = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).orElse(null);
+                // se mi arriva una nuova richiesta di trasporto ma ho gia un trm associato alla macchina
+                // il passeggero potrebbe aver avuto un problema quindi fermo e ricreo il trm
+                if(oldManager == null) {
                     log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
                     ActorRef manager = getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
                     // Monitoring manager
                     getContext().watch(manager);
-                }else  log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO");
+                }else{
+                    log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO, RICREO");
+                    getContext().unwatch(oldManager);
+                    getContext().stop(oldManager);
+
+                    getContext().getSelf().tell(msg,getSender());
+                }
             }
         }
     }
@@ -204,7 +214,7 @@ public class Car extends AbstractActor {
         // Se termina il manager che ha prenotato la macchina, ed essa è in transito verso il passeggero
         // potrebbe essere che il passeggero non sappia che io ho accettato di trasportarlo.
         // La terminazione di qualsiasi altro TransitManager non è un problema rilevante.
-        if(bookingManager.equals(msg.getActor()) && this.status == CarStatus.TRANSIT_TO_PASSENGER){
+        if(msg.getActor().equals(bookingManager) && this.status == CarStatus.TRANSIT_TO_PASSENGER){
             // Invio una conferma per certezza al passeggero
             passenger.tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
         }
@@ -212,7 +222,7 @@ public class Car extends AbstractActor {
         // TransitManager è terminato
         // Gestione terminazione TransitManager
         // Che cosa succede quando muore il transit manager? Che cosa vuol dire?
-        if(transitManager.equals(msg.getActor())){
+        else if(msg.actor().equals(transitManager)){
             log.warning("TRANSIT_MANAGER TERMINATO");
             // Supponiamo che la terminazione del TransitManager implichi un problema fisico della macchina
             // Se in transito con il passeggero, notifico dove è avvenuto il guasto
@@ -222,16 +232,24 @@ public class Car extends AbstractActor {
         }
 
         // Il passeggero di questa macchina è terminato e la macchina sta arrivando da lui
-        if(this.status == CarStatus.TRANSIT_TO_PASSENGER && msg.actor().equals(passenger)){
+        else if(this.status == CarStatus.TRANSIT_TO_PASSENGER && msg.actor().equals(passenger)){
             log.warning("PASSEGGERO TERMINATO");
             // Fermo il transit manager
             if (getContext().findChild("TRANSIT_MANAGER").isPresent()) {
-                ActorRef transitManager = getContext().getChild("TRANSIT_MANAGER");
+                ActorRef transitManager = getContext().findChild("TRANSIT_MANAGER").orElse(null);
                 getContext().unwatch(transitManager);
                 getContext().stop(transitManager);
             }
             // Macchina torna disponibile
             this.status = CarStatus.AVAILABLE;
+        }else{
+            //siamo nel caso in cui è fallito un transport request manger
+            Boolean existChild = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).isPresent();
+            if(existChild){
+                getContext().unwatch(msg.getActor());
+                getContext().stop(msg.getActor());
+            }
+
         }
     }
 

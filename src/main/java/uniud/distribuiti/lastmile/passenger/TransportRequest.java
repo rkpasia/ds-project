@@ -142,13 +142,15 @@ public class TransportRequest extends AbstractActor {
     // Metodo per la gestione terminazioni attori in monitoraggio
     private void terminationHandling(Terminated msg){
 
+        log.info("RILEVATA LA MORTE DI UN ATTORE " + msg.actor().path().name());
+
         // Terminazione di un manager
         // Se termina durante lo stato di emissione...
         if(this.status == TransportRequestStatus.EMITTED){
             // lo rimuovo semplicemente dalla lista di selezionabili
             removeCarManagerFromMap(msg.getActor());
 
-            // Possibile la valutazione di nuova richiesta alla macchina per sapere la disponibilità nuovamente
+            //TODO Possibile la valutazione di nuova richiesta alla macchina per sapere la disponibilità nuovamente
             // (non strettamente necessario)
         }
 

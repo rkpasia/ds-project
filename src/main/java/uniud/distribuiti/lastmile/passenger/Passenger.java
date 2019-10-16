@@ -138,6 +138,9 @@ public class Passenger extends AbstractActor {
     // Supporta la gestione del flusso corretto di esecuzione della business logic
     private void terminationHandling(Terminated msg){
 
+        log.info("RILEVATA LA MORTE DI UN ATTORE " + msg.actor().path().name());
+
+
         // Gestione terminazione transport request
         if(msg.actor().equals(transportRequest) && this.status == PassengerStatus.REQUEST_EMITTED){
             // Se la transport request termina prima
@@ -146,6 +149,7 @@ public class Passenger extends AbstractActor {
             // Devo riprendere l'operazione da capo
 
             getContext().unwatch(msg.getActor());
+            getContext().stop(msg.getActor());
             mediator.tell(new DistributedPubSubMediator.Publish("ABORT_REQUEST", new TransportCoordination.AbortTransportRequest()), msg.getActor());
             // Emissione nuova transport request
             getSelf().tell(new EmitRequestMessage(), getSelf());
