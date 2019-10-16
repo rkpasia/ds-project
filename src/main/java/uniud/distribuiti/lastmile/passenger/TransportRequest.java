@@ -11,6 +11,7 @@ import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordina
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 // TransportRequest actor
@@ -27,7 +28,7 @@ public class TransportRequest extends AbstractActor {
         CONFIRMED
     }
 
-    private ArrayList<CarInformation> availableCars = new ArrayList<CarInformation>();
+    private HashMap<ActorRef,CarInformation> availableCarManagers = new HashMap<>();
     private int requestCallbacks = 0;
     private final int MAX_REQUEST_CALLBACKS = 6;
     private ActorRef selectedCarManager;
@@ -59,7 +60,7 @@ public class TransportRequest extends AbstractActor {
     }
 
     private void monitorRequestStatus(RequestMonitoring msg){
-        if(status == TransportRequestStatus.EMITTED && availableCars.isEmpty()){
+        if(status == TransportRequestStatus.EMITTED && availableCarManagers.isEmpty()){
             log.info("NESSUNA DISPONIBILITA RICEVUTA, RIPROVO");
             getContext().parent().tell(new Passenger.EmitRequestMessage(), getSelf());
             this.requestCallbacks += 1;
@@ -77,17 +78,23 @@ public class TransportRequest extends AbstractActor {
 
         // Nella lista di macchine Disponibili Abbiamo il riferimento al transportRequestManager
         // e le info della macchina
-        availableCars.add(new CarInformation(msg.getRouteLength(), getSender()));
+        availableCarManagers.computeIfAbsent(getSender(), manager -> new CarInformation(msg.getRouteLength(), manager));
 
         // Monitoring del manager che mi ha dato disponibilità
         getContext().watch(getSender());
+    }
+
+    // Rimozione di un manager dal mapping
+    private void removeCarManagerFromMap(ActorRef manager){
+        availableCarManagers.remove(manager);
+        getContext().unwatch(manager);
     }
 
     private void carUnavaiable(TransportCoordination msg){
         log.info("RIMUOVO LA MACCHINA DALLA LISTA (GIÀ PRENOTATA) {}", getSender());
 
         // Rimuovo la macchina se presente sulla lista
-        availableCars.removeIf(car -> car.getTransportRequestManager().equals(getSender()));
+        removeCarManagerFromMap(getSender());
     }
 
     // Selezione di una macchina che ha dato disponibilità al passeggero
@@ -96,14 +103,15 @@ public class TransportRequest extends AbstractActor {
         // di tecniche di selezione più sofisticate.
 
         // Ordino la lista di macchine disponibili per EstTransTime e prendo il primo
-        if(!availableCars.isEmpty()){
-            availableCars.sort(new CarInformation.SortByEstTransTime());
-            CarInformation car = availableCars.get(0);
+        if(!availableCarManagers.isEmpty()){
+            ArrayList<CarInformation> cars = new ArrayList<CarInformation>(availableCarManagers.values());
+            cars.sort(new CarInformation.SortByEstTransTime());
+            CarInformation car = cars.get(0);
 
             car.getTransportRequestManager().tell(new TransportCoordination.CarBookingRequestMsg(), getSender());
             selectedCarManager = car.getTransportRequestManager();
             this.status = TransportRequestStatus.BOOKING;
-            log.info("PRENOTO LA MACCHINA {}", availableCars.get(0).getTransportRequestManager().path().parent().name());
+            log.info("PRENOTO LA MACCHINA {}", cars.get(0).getTransportRequestManager().path().parent().name());
         } else {
             // TODO: Che cosa fa il passeggero quando non ci sono più macchine disponibili?
             log.warning("NON CI SONO MACCHINE DISPONIBILI!!!");
@@ -125,7 +133,7 @@ public class TransportRequest extends AbstractActor {
     private void bookingRejected(TransportCoordination msg){
         log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
 
-        availableCars.removeIf(car -> car.getTransportRequestManager().equals(getSender()));
+        removeCarManagerFromMap(getSender());
 
         // TODO: Che facciamo se la prenotazione è respinta?
         //  Bisogna avvisare il passeggero (quindi dare feedback anche all'utente)
@@ -138,7 +146,7 @@ public class TransportRequest extends AbstractActor {
         // Se termina durante lo stato di emissione...
         if(this.status == TransportRequestStatus.EMITTED){
             // lo rimuovo semplicemente dalla lista di selezionabili
-            availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
+            removeCarManagerFromMap(msg.getActor());
 
             // Possibile la valutazione di nuova richiesta alla macchina per sapere la disponibilità nuovamente
             // (non strettamente necessario)
@@ -150,13 +158,13 @@ public class TransportRequest extends AbstractActor {
             // allora devo fare qualcosa
             if(selectedCarManager.equals(msg.actor())){
                 // Lo rimuovo dalle macchine disponibili
-                availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
+                removeCarManagerFromMap(msg.getActor());
                 // Avvisare il passeggero che la selezione della macchina ha avuto un problema
                 carBookingHasStopped();
             }
 
             // Se non lo stavo prenotando, rimuovo semplicemente
-            availableCars.removeIf(car -> car.getTransportRequestManager().equals(msg.getActor()));
+            removeCarManagerFromMap(msg.getActor());
         }
 
     }
