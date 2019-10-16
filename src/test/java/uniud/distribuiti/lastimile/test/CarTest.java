@@ -2,14 +2,18 @@ package uniud.distribuiti.lastimile.test;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.javadsl.TestKit;
+import akka.util.Timeout;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scala.concurrent.Await;
 import uniud.distribuiti.lastmile.car.Car;
 import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.LocationHelper;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
@@ -22,7 +26,7 @@ public class CarTest  {
     @BeforeClass
     public static void setup() {
 
-        system =ActorSystem.create();
+        system = ActorSystem.create();
 
     }
 
@@ -89,4 +93,50 @@ public class CarTest  {
             }
         };
     }
+
+
+    @Test
+    // Test corretto funzionamento supervisione terminazione TransitManager
+    public void transitManagerTerminationTest(){
+
+        new TestKit(system){
+            {
+
+                final ActorRef car = system.actorOf(Car.props(), "MACCHINA");
+                TestKit transportRequest = new TestKit(system);
+                // Nuova richiesta per la macchina
+                car.tell(new Car.TransportRequestMessage(2, 0), transportRequest.getRef());
+                // Mi aspetto che il TransitManager riceva la disponibilità della macchina
+                transportRequest.expectMsgClass(TransportCoordination.CarAvailableMsg.class);
+
+                // Riferimento passeggero
+                TestKit passenger = new TestKit(system);
+                // Prenoto la macchina, e suppongo di iniziare il trasporto
+                car.tell(new TransportCoordination.CarBookingRequestMsg(
+                        passenger.getRef(),
+                        LocationHelper.defineRoute(3, 2, 0), new Location(3)),
+                        transportRequest.getRef());
+
+                // Dopo un determinato tempo (2 secondi) il TransitManager termina
+                // C'è un problema con la macchina
+                system.scheduler().scheduleOnce(Duration.ofSeconds(2), () -> {
+                    // Selezione tramite future del riferimento all'attore TransitManager
+                    try {
+                        ActorRef result = Await.result(system.actorSelection("user/MACCHINA/TRANSIT_MANAGER")
+                                .resolveOne(Timeout.create(Duration.ofMillis(100))), scala.concurrent.duration.Duration.Inf());
+                        result.tell(PoisonPill.getInstance(), null);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }, system.getDispatcher());
+
+                // Se il TransitManager ha un problema, è assunto che la macchina sia rotta
+                // Il passeggero si aspetta il messaggio che indica la rottura
+                passenger.expectMsgClass(Duration.ofSeconds(10), Car.CarBreakDown.class);
+            }
+        };
+
+    }
+
+
 }
