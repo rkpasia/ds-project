@@ -28,6 +28,8 @@ public class Passenger extends AbstractActor {
 
     public static class SelectionStopped {}
 
+    public static class TransportRequestCompromised {}
+
     private ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     private ActorRef transportRequest;
@@ -155,8 +157,12 @@ public class Passenger extends AbstractActor {
             getSelf().tell(new EmitRequestMessage(), getSelf());
         }
 
-        // TODO: Se TransportRequest termina mentre il mio stato è SELECTION_REQUESTED?
         // Tutta una serie di conseguenze devono essere considerate
+        if(msg.getActor().equals(transportRequest) && this.status == PassengerStatus.SELECTION_REQUESTED){
+            getContext().unwatch(msg.getActor());
+            mediator.tell(new DistributedPubSubMediator.Publish("ABORT_REQUEST", new TransportCoordination.AbortTransportRequest()), msg.getActor());
+            getSelf().tell(new TransportRequestCompromised(), getSelf());
+        }
 
         // Gestione ricezione terminazione della macchina
         if(this.status == PassengerStatus.WAITING_CAR && msg.getActor().equals(car)){
@@ -172,6 +178,14 @@ public class Passenger extends AbstractActor {
 
     }
 
+    // Gestione ricezione messaggio di compromissione transport request
+    private void requestCompromised(TransportRequestCompromised msg){
+        // TODO: Notifica utente che la richiesta ha avuto un problema
+        // Procedo con l'emissione automatica di una nuova richiesta di trasporto
+        log.info("RICHIESTA DI TRASPORTO COMPROMESSA");
+        getSelf().tell(new EmitRequestMessage(), getSelf());
+    }
+
     @Override
     public Receive createReceive(){
 
@@ -185,6 +199,7 @@ public class Passenger extends AbstractActor {
                 .match(Car.BrokenLocation.class, this::carBrokenInLocation)
                 .match(Car.CarBreakDown.class, this::carBroken)
                 .match(SelectionStopped.class, this::carSelectionStopped)
+                .match(TransportRequestCompromised.class, this::requestCompromised)
                 .match(ClusterServiceMessages.NoCarsAvailable.class, this::noTransportAvailable)
                 .match(Terminated.class, this::terminationHandling)
                 .matchAny(o -> log.info("received unknown message"))
