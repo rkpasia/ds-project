@@ -164,8 +164,6 @@ public class BookingAndTransitPassengerErrorTest {
                 ActorRef transportRequest = car.getLastSender();
                 ActorRef manager = car.childActorOf(TransportRequestMngr.props(transportRequest, new Route(10, new ArrayList<>()), new Location(0)), "MANAGER");
 
-                transportRequest.tell(new TransportCoordination.CarAvailableMsg(10), manager);
-
                 passenger.tell(new Passenger.SelectCarMessage(), null);
                 car.expectMsgClass(TransportCoordination.CarBookingRequestMsg.class);
 
