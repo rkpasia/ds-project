@@ -81,6 +81,7 @@ public class Passenger extends AbstractActor {
         // Il passeggero entra in attesa della macchina prenotata
         this.status = PassengerStatus.WAITING_CAR;
         this.car = getSender();
+        getContext().watch(car);
     }
 
     private void carSelectionStopped(SelectionStopped msg){
@@ -168,11 +169,13 @@ public class Passenger extends AbstractActor {
 
         // Gestione ricezione terminazione della macchina
         if(this.status == PassengerStatus.WAITING_CAR && msg.getActor().equals(car)){
+            log.info("LA MACCHINA CHE STO ASPETTANDO HA AVUTO UN PROBLEMA");
             getContext().unwatch(msg.getActor());
             // Se sto aspettando, mi dico di inizializzare una nuova richiesta di trasporto
             getSelf().tell(new Car.CarBreakDown(), getSelf());
         }
         if(this.status == PassengerStatus.IN_TRANSPORT && msg.getActor().equals(car)){
+            log.info("LA MACCHINA CHE MI STA TRASPORTANDO HA AVUTO UN PROBLEMA");
             getContext().unwatch(msg.getActor());
             // Se ero in transito con la macchina, richiedo e scelgo automaticamente una nuova macchina
             getSelf().tell(new Car.BrokenLocation(this.location), getSelf());

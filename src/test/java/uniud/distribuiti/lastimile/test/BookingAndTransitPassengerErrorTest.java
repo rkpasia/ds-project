@@ -10,10 +10,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import uniud.distribuiti.lastmile.car.Car;
+import uniud.distribuiti.lastmile.car.TransportRequestMngr;
+import uniud.distribuiti.lastmile.location.Location;
+import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
+import java.util.ArrayList;
 
 public class BookingAndTransitPassengerErrorTest {
 
@@ -129,5 +133,45 @@ public class BookingAndTransitPassengerErrorTest {
                         });
             }
         };
+    }
+
+    @Test
+    // La macchina termina mentre è in arrivo dal passeggero
+    public void carBrokenInTransitToPassenger(){
+
+        new TestKit(system){
+
+            {
+                ActorRef passenger = system.actorOf(Passenger.props(), "PASSEGGERO");
+                TestKit car = new TestKit(system);
+                TestKit anotherCar = new TestKit(system);
+
+                DistributedPubSub.get(system).mediator().tell(new DistributedPubSubMediator.Subscribe("REQUEST", car.getRef()), getRef());
+                DistributedPubSub.get(system).mediator().tell(new DistributedPubSubMediator.Subscribe("REQUEST", anotherCar.getRef()), getRef());
+                receiveN(2);
+
+                passenger.tell(new Passenger.EmitRequestMessage(), null);
+                car.expectMsgClass(Car.TransportRequestMessage.class);
+                anotherCar.expectMsgClass(Car.TransportRequestMessage.class);
+
+                ActorRef transportRequest = car.getLastSender();
+                ActorRef manager = car.childActorOf(TransportRequestMngr.props(transportRequest, new Route(10, new ArrayList<>()), new Location(0)), "MANAGER");
+
+                transportRequest.tell(new TransportCoordination.CarAvailableMsg(10), manager);
+
+                passenger.tell(new Passenger.SelectCarMessage(), null);
+                car.expectMsgClass(TransportCoordination.CarBookingRequestMsg.class);
+
+                manager.tell(new TransportCoordination.CarBookingConfirmedMsg(), manager);
+
+                system.stop(car.getRef());
+                anotherCar.expectMsgClass(Car.TransportRequestMessage.class);
+                assert(anotherCar.getLastSender().equals(transportRequest));
+
+
+            }
+
+        };
+
     }
 }
