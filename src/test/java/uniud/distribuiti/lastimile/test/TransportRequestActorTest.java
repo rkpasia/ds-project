@@ -2,10 +2,20 @@ package uniud.distribuiti.lastimile.test;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
+import akka.actor.Props;
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.cluster.pubsub.DistributedPubSubMediator;
+import akka.testkit.TestProbe;
 import akka.testkit.javadsl.TestKit;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import uniud.distribuiti.lastmile.car.Car;
+import uniud.distribuiti.lastmile.cluster.ClusterEventsListener;
+import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.passenger.TransportRequest;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
@@ -19,7 +29,7 @@ public class TransportRequestActorTest  {
     @BeforeClass
     public static void setup() {
 
-        system =ActorSystem.create();
+        system = ActorSystem.create();
 
     }
 
@@ -62,6 +72,52 @@ public class TransportRequestActorTest  {
                             expectNoMessage();
                             return null;
                         });
+            }
+        };
+    }
+
+    @Test
+    // Verifica che la morte di una transport request
+    // venga diffusa al passeggero e anche a tutti i manager coinvolti
+    public void transportRequestDeathBroadcast(){
+        new TestKit(system){
+            {
+
+                class CarProbe extends TestKit {
+                    public CarProbe(){
+                        super(system);
+                        ActorRef mediator = DistributedPubSub.get(system).mediator();
+                        mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", this.getRef()), this.getRef());
+                    }
+                }
+
+                class ManagerProbe extends TestKit {
+                    public ManagerProbe(){
+                        super(system);
+                        ActorRef mediator = DistributedPubSub.get(system).mediator();
+                        mediator.tell(new DistributedPubSubMediator.Subscribe("ABORT_REQUEST", this.getRef()), this.getRef());
+                    }
+                }
+
+                ActorRef passenger = system.actorOf(Passenger.props(), "TRANSPORT_REQUEST");
+                CarProbe car = new CarProbe();
+                car.expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
+                ManagerProbe manager = new ManagerProbe();
+                manager.expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
+
+                within(
+                        Duration.ofSeconds(20),
+                        () -> {
+                            passenger.tell(new Passenger.EmitRequestMessage(), null);
+                            car.expectMsgClass(Car.TransportRequestMessage.class);
+                            ActorRef transportRequest = car.getLastSender();
+                            transportRequest.tell(PoisonPill.getInstance(), null);
+                            car.expectMsgClass(Car.TransportRequestMessage.class);
+                            manager.expectMsgClass(TransportCoordination.AbortTransportRequest.class);
+                            assert(manager.getLastSender().equals(transportRequest));
+                            return null;
+                        }
+                );
             }
         };
     }

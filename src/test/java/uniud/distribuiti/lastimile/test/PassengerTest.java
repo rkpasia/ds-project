@@ -1,7 +1,6 @@
 package uniud.distribuiti.lastimile.test;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
+import akka.actor.*;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.javadsl.TestKit;
@@ -14,6 +13,7 @@ import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
+import java.util.ArrayList;
 
 public class PassengerTest  {
 
@@ -71,6 +71,73 @@ public class PassengerTest  {
                             expectNoMessage();
                             return null;
                         });
+            }
+        };
+    }
+
+    @Test
+    // Verifica deathWatch transport request
+    public void transportRequestTermination(){
+
+        new TestKit(system){
+            {
+
+                // Probe macchina per test
+                class CarProbe extends TestKit {
+                    public CarProbe(){
+                        super(system);
+                        ActorRef mediator = DistributedPubSub.get(system).mediator();
+                        mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", this.getRef()), this.getRef());
+                    }
+                }
+
+                // Teseting passeggero
+                ActorRef passenger = system.actorOf(Passenger.props(), "PASSEGGERO");
+                // Macchina test di riferimento
+                CarProbe car = new CarProbe();
+                // Messaggio di iscrizione al canale PubSub
+                car.expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
+
+                // Passeggero emette nuova richiesta
+                passenger.tell(new Passenger.EmitRequestMessage(), null);
+                // Macchina risponde alla richiesta con disponibilità
+                car.expectMsgClass(Car.TransportRequestMessage.class);
+                // Ottengo riferimento alla TransportRequest
+                ActorRef transportRequest = car.getLastSender();
+
+                // Manager test di riferimento
+                TestKit manager = new TestKit(system);
+                ActorRef mediator = DistributedPubSub.get(system).mediator();
+                // Iscrizione del manager al canale PubSub per ricevere aborti di richieste di trasporto
+                mediator.tell(new DistributedPubSubMediator.Subscribe("ABORT_REQUEST", manager.getRef()), manager.getRef());
+                manager.expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
+
+                // Avviso della disponibilità del manager la TransportRequest
+                transportRequest.tell(new TransportCoordination.CarAvailableMsg(10), manager.getRef());
+                // Terminazione TransportRequest
+                transportRequest.tell(PoisonPill.getInstance(), getRef());
+
+                // Manager deve ricevere il messaggio che comunica la terminazione della transport request
+                manager.expectMsgClass(TransportCoordination.AbortTransportRequest.class);
+
+                // Mi aspetto che la macchina riceva una nuova richiesta emessa dal passeggero
+                // perché è terminato il TransportRequest
+                car.expectMsgClass(Car.TransportRequestMessage.class);
+                // Ottengo il nuovo TransportRequest
+                ActorRef transportRequest2 = car.getLastSender();
+                // Mi assicuro che sia diverso dal precedente
+                assert(!transportRequest2.equals(transportRequest));
+
+                // Passeggero seleziona la macchina da prenotare
+                passenger.tell(new Passenger.SelectCarMessage(), getRef());
+                // Terminazione della TransportRequest che sta prenotando
+                transportRequest2.tell(PoisonPill.getInstance(), null);
+
+                // La macchina si aspetta di ricevere una nuova transportRequest dal passeggero,
+                // che ha iniziato un flusso completamente nuovo
+                car.expectMsgClass(Car.TransportRequestMessage.class);
+                // Assicuro che la nuova TR sia diversa dalla precedente
+                assert(!car.getLastSender().equals(transportRequest2));
             }
         };
     }

@@ -3,6 +3,7 @@ package uniud.distribuiti.lastmile.car;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
@@ -10,10 +11,11 @@ import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.car.engine.Engine;
 import uniud.distribuiti.lastmile.car.fuel.FuelTank;
 import uniud.distribuiti.lastmile.location.Location;
-import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.LocationHelper;
+import uniud.distribuiti.lastmile.location.Route;
 import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
+
 import java.io.Serializable;
 import java.time.Duration;
 
@@ -25,13 +27,17 @@ public class Car extends AbstractActor {
     public enum CarStatus {
         AVAILABLE,
         REFUEL,
-        TRANSIT,
+        TRANSIT_TO_PASSENGER,
+        TRANSIT_WITH_PASSENGER,
         BROKEN
     }
 
     private Location location;
     private final FuelTank fuelTank;
     private final Engine engine;
+    private ActorRef passenger;
+    private ActorRef bookingManager;
+    private ActorRef transitManager;
 
     public static Props props(){
         return Props.create(Car.class, () -> new Car());
@@ -94,9 +100,16 @@ public class Car extends AbstractActor {
             });
 
             // Creazione TransitManager
-            getContext().actorOf(Props.create(TransitManager.class, () -> new TransitManager(new TransportRoute(msg.route), msg.location, msg.passenger)), "TRANSIT_MANAGER");
-            // Macchina inizia transito verso passeggero
-            this.status = CarStatus.TRANSIT;
+            transitManager = getContext().actorOf(TransitManager.props(new TransportRoute(msg.route), msg.location, msg.passenger), "TRANSIT_MANAGER");
+
+            // Monitoring attori TransitManager e Passeggero
+            getContext().watch(transitManager);
+            getContext().watch(msg.passenger);
+
+            // Aggiornamento variabili di stato
+            this.status = CarStatus.TRANSIT_TO_PASSENGER;
+            this.passenger = msg.passenger;
+            this.bookingManager = getSender();
         } else {
             log.info("NON SONO DISPONIBILE");
             getSender().tell(new TransportCoordination.CarBookingRejectMsg(), getSelf());
@@ -110,11 +123,17 @@ public class Car extends AbstractActor {
             log.info("VALUTAZIONE " + msg.toString());
             Route route = LocationHelper.defineRoute(this.location.getNode(), msg.getPassengerLocation(), msg.getDestination());
             if (haveEnoughFuel(route.getDistance())) {
-                Boolean existChild = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" + getSender().path().name()).isPresent();
-                if(! existChild) {
+                boolean existManager = getContext().findChild("TRANSPORT_REQUEST_MANAGER@" +getSender().path().uid()).isPresent();
+                // se mi arriva una nuova richiesta di trasporto ma ho gia un trm associato alla macchina
+                // il passeggero potrebbe aver avuto un problema quindi fermo e ricreo il trm
+                if(! existManager) {
                     log.info("CARBURANTE SUFFICIENTE - INVIO PROPOSTA");
-                    getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().name());
-                }else  log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO");
+                    ActorRef manager = getContext().actorOf(TransportRequestMngr.props(getSender(), route, new Location(msg.getPassengerLocation())), "TRANSPORT_REQUEST_MANAGER@" + getSender().path().uid());
+                    // Monitoring manager
+                    getContext().watch(manager);
+                }else{
+                    log.info("TRANSPORT_REQUEST_MANAGER GIA CREATO");
+                }
             }
         }
     }
@@ -125,6 +144,10 @@ public class Car extends AbstractActor {
         // Il risultato è dato dall'interazione tra FuelTank e Engine
         double fuelConsumption = engine.fuelConsumption(km);
         return fuelTank.hasEnoughFuel(fuelConsumption);
+    }
+
+    private void updateLocation(TransportCoordination.UpdateLocation msg){
+        this.location.setNode(msg.location);
     }
 
     private void transportCompleted(TransportCoordination.DestinationReached msg){
@@ -146,6 +169,18 @@ public class Car extends AbstractActor {
         } else {
             this.status = CarStatus.AVAILABLE;
         }
+        getContext().unwatch(passenger);
+        getContext().unwatch(transitManager);
+        getContext().stop(transitManager);
+        getContext().stop(bookingManager);
+    }
+
+    private void abortTransportRequest(TransportCoordination msg){
+        // Ricevo dal manager il messaggio di annullamento della transport request
+        // Fermo il manager
+        log.info("ABORT TRANSPORT REQUEST " + getSender().path().name());
+        getContext().unwatch(getSender());
+        getContext().stop(getSender());
     }
 
     // Gestione guasto anomalo macchina
@@ -168,16 +203,63 @@ public class Car extends AbstractActor {
         this.status = CarStatus.AVAILABLE;
     }
 
+    // Metodo gestione terminazione attori che sta monitorando
+    private void terminationHandling(Terminated msg){
+
+        log.info("RILEVATA LA MORTE DI UN ATTORE " + msg.actor().path().name());
+        
+        // Gestione terminazione TransportRequestManager
+        // Se termina il manager che ha prenotato la macchina, ed essa è in transito verso il passeggero
+        // potrebbe essere che il passeggero non sappia che io ho accettato di trasportarlo.
+        // La terminazione di qualsiasi altro TransitManager non è un problema rilevante.
+        if(msg.getActor().equals(bookingManager) && this.status == CarStatus.TRANSIT_TO_PASSENGER){
+            // Invio una conferma per certezza al passeggero
+            passenger.tell(new TransportCoordination.CarBookingConfirmedMsg(), getSelf());
+        }
+
+        // TransitManager è terminato
+        // Gestione terminazione TransitManager
+        // Che cosa succede quando muore il transit manager? Che cosa vuol dire?
+        else if(msg.actor().equals(transitManager)){
+            log.warning("TRANSIT_MANAGER TERMINATO");
+            // Supponiamo che la terminazione del TransitManager implichi un problema fisico della macchina
+            // Se in transito con il passeggero, notifico dove è avvenuto il guasto
+            if (this.status == CarStatus.TRANSIT_WITH_PASSENGER) passenger.tell(new Car.BrokenLocation(this.location), getSelf());
+            // Se in transito verso il passeggero, notifico che la macchina ha avuto un guasto
+            else if (this.status == CarStatus.TRANSIT_TO_PASSENGER) passenger.tell(new Car.CarBreakDown(), getSelf());
+        }
+
+        // Il passeggero di questa macchina è terminato e la macchina sta arrivando da lui
+        else if(this.status == CarStatus.TRANSIT_TO_PASSENGER && msg.actor().equals(passenger)){
+            log.warning("PASSEGGERO TERMINATO");
+            // Fermo il transit manager
+            if (getContext().findChild("TRANSIT_MANAGER").isPresent()) {
+                ActorRef transitManager = getContext().findChild("TRANSIT_MANAGER").orElse(null);
+                getContext().unwatch(transitManager);
+                getContext().stop(transitManager);
+                getContext().stop(bookingManager);
+            }
+            // Macchina torna disponibile
+            this.status = CarStatus.AVAILABLE;
+        }
+    }
+
+
+
     @Override
     public Receive createReceive(){
         return receiveBuilder()
                 .match(DistributedPubSubMediator.SubscribeAck.class, msg -> log.info("ISCRITTO RICEZIONE RICHIESTE"))
-                .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportRequestMessage.class, this::evaluateRequest)
+                .match(TransportCoordination.CarBookingRequestMsg.class, this::carBooking)
                 .match(TransportCoordination.DestinationReached.class, this::transportCompleted)
+                .match(TransportCoordination.AbortTransportRequest.class, this::abortTransportRequest)
+                .match(TransportCoordination.UpdateLocation.class, this::updateLocation)
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
                 .match(RefuelCompleted.class, this::carRefuelCompleted)
+                .match(TransportCoordination.CarArrivedToPassenger.class, msg -> {this.status= CarStatus.TRANSIT_WITH_PASSENGER;})
+                .match(Terminated.class, this::terminationHandling)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();
     }

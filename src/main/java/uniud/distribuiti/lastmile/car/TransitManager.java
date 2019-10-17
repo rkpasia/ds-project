@@ -44,13 +44,19 @@ public class TransitManager extends AbstractActorWithTimers {
         // Raggiunta la location del passeggero, informalo che la macchina è arrivata
         if(this.route.getCurrentNode() == this.passengerLocation.getNode()) {
             passenger.tell(new TransportCoordination.CarArrivedToPassenger(), getContext().parent());
+            getContext().getParent().tell(new TransportCoordination.CarArrivedToPassenger(), getContext().parent());
             this.PASSENGER_ONBOARD = true;
         }
 
         // Quando ha raggiunto la fine del tragitto, informa macchina e passeggero
         if(!hasNext){
             endTransit();
-        }
+        } else if(this.PASSENGER_ONBOARD) {
+            // Avviso la macchina e il passeggero della nuova location raggiunta
+            passenger.tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
+            getContext().parent().tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
+        } else getContext().parent().tell(new TransportCoordination.UpdateLocation(this.route.getCurrentNode()), getSelf());
+
 
     }
 
@@ -59,7 +65,6 @@ public class TransitManager extends AbstractActorWithTimers {
         getContext().parent().tell(new TransportCoordination.DestinationReached(destination, route.getRoute().getDistance()), getSelf());
         passenger.tell(new TransportCoordination.DestinationReached(destination), getSelf());
         getTimers().cancelAll();
-        context().stop(getSelf());
     }
 
     private void carBroken(Car.CarBreakDown msg){
@@ -78,7 +83,6 @@ public class TransitManager extends AbstractActorWithTimers {
                 .match(
                         StartTick.class,
                         msg -> {
-                            // TODO: Avviso macchina inizio trasporto per fare update del suo stato (opzionale)
                             getTimers().startPeriodicTimer(TICK_KEY, new TransitTick(), Duration.ofSeconds(5));
                         }
                 )
