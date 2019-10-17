@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Kill;
 import akka.actor.PoisonPill;
-import akka.cluster.Cluster;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.javadsl.TestKit;
@@ -12,12 +11,11 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import uniud.distribuiti.lastmile.car.Car;
-import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
 
-public class BookingAndTransitErrorTest  {
+public class BookingAndTransitCarErrorTest {
 
     static ActorSystem system;
 
@@ -43,7 +41,6 @@ public class BookingAndTransitErrorTest  {
         new TestKit(system) {
             {
 
-                final ActorRef passenger = system.actorOf(Passenger.props(), "Passenger");
                 final ActorRef car = system.actorOf(Car.props(), "car");
                 final ActorRef car2 = system.actorOf(Car.props(), "car2");
 
@@ -54,14 +51,12 @@ public class BookingAndTransitErrorTest  {
                 // ci aspettiamo che l'iscrizione vada a buon fine
                 ActorRef mediator = DistributedPubSub.get(system).mediator();
                 mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", fakeCar.getRef()), getRef());
+                mediator.tell(new DistributedPubSubMediator.Subscribe("ABORT_REQUEST", fakeCar.getRef()), getRef());
+                expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
                 expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
 
-
-
-                Cluster cluster = Cluster.get(system);
-
                 within(
-                        Duration.ofSeconds(1),
+                        Duration.ofSeconds(10),
                         () -> {
 
                             fakePassenger.send(car,new Car.TransportRequestMessage(0,1));

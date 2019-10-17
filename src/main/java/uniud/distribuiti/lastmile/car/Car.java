@@ -172,8 +172,7 @@ public class Car extends AbstractActor {
         getContext().unwatch(passenger);
         getContext().unwatch(transitManager);
         getContext().stop(transitManager);
-        if(!bookingManager.isTerminated())
-            getContext().stop(bookingManager);
+        getContext().stop(bookingManager);
     }
 
     private void abortTransportRequest(TransportCoordination msg){
@@ -238,6 +237,7 @@ public class Car extends AbstractActor {
                 ActorRef transitManager = getContext().findChild("TRANSIT_MANAGER").orElse(null);
                 getContext().unwatch(transitManager);
                 getContext().stop(transitManager);
+                getContext().stop(bookingManager);
             }
             // Macchina torna disponibile
             this.status = CarStatus.AVAILABLE;

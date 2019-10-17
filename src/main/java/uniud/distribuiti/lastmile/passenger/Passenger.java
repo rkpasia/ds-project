@@ -118,6 +118,7 @@ public class Passenger extends AbstractActor {
         this.location.setNode(msg.location.getNode());
         //transportRequest.tell(msg, getSelf());
         // Richiesta nuova macchina per passeggero
+        // TODO: Ricordarsi di aggiornare la destinazione della macchina quando non sara più statica
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
         // TODO: Scheduling messaggio automatico per prenotare la macchina più vicina disponibile
@@ -125,6 +126,7 @@ public class Passenger extends AbstractActor {
 
     private void carBroken(Car.CarBreakDown msg){
         log.info("MACCHINA HA AVUTO PROBLEMA MENTRE IN ARRIVO, RICHIEDO NUOVA");
+        // TODO: Ricordarsi di aggiornare la destinazione della macchina quando non sara più statica
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
         // A questo punto l'utente può scegliere dall'applicazione la macchina nuova
@@ -152,7 +154,6 @@ public class Passenger extends AbstractActor {
             // Devo riprendere l'operazione da capo
 
             getContext().unwatch(msg.getActor());
-            getContext().stop(msg.getActor());
             mediator.tell(new DistributedPubSubMediator.Publish("ABORT_REQUEST", new TransportCoordination.AbortTransportRequest()), msg.getActor());
             // Emissione nuova transport request
             getSelf().tell(new EmitRequestMessage(), getSelf());

@@ -191,7 +191,7 @@ public class TransportRequest extends AbstractActor {
                 )
                 .match(
                         TransportCoordination.CarBookingConfirmedMsg.class,
-                        this::bookingConfirmation
+                            this::bookingConfirmation
                 )
                 .match(
                         TransportCoordination.CarBookingRejectMsg.class,
