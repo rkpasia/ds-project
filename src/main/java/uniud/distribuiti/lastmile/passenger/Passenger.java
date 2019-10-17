@@ -128,6 +128,7 @@ public class Passenger extends AbstractActor {
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
         // A questo punto l'utente può scegliere dall'applicazione la macchina nuova
+        // TODO: Avviso interfaccia della nuova disponibilità di macchine a soddisfare la richiesta, eventualmente.
     }
 
     private void noTransportAvailable(ClusterServiceMessages msg){
