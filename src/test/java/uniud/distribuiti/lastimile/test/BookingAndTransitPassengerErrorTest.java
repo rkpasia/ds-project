@@ -137,6 +137,13 @@ public class BookingAndTransitPassengerErrorTest {
 
     @Test
     // La macchina termina mentre è in arrivo dal passeggero
+    // Un passeggero emette una richiesta di trasporto che viene ricevuta da due macchine.
+    // La prima macchina risponde al passeggero con la conferma della sua disponibilità.
+    // Il passeggero, ricevuta la disponibilità seleziona la macchina e richiede la prenotazione.
+    // La macchina riceve la prenotazione, accetta la prenotazione e inizia il transito verso il passeggero.
+    // FALLIMENTO: La macchina in transito termina
+    // COMPORTAMENTO: Mi aspetto che la seconda macchina, disponibile nel sistema, riceva un altro messaggio dalla
+    // stessa TransportRequest precedente per ottenere una eventuale disponibilità a servire la richiesta del passeggero
     public void carBrokenInTransitToPassenger(){
 
         new TestKit(system){
