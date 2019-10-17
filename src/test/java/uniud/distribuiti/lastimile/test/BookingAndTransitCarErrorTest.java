@@ -95,16 +95,6 @@ public class BookingAndTransitCarErrorTest {
 
                             //uccidiamo il transit manager
                             fakePassenger.getLastSender().tell(Kill.getInstance(),null);
-                            fakePassenger.expectMsgClass(Duration.ofSeconds(20),Car.BrokenLocation.class);
-
-                            fakePassenger.send(car2,new Car.TransportRequestMessage(0,1));
-                            fakePassenger.expectMsgClass(TransportCoordination.class);
-                            ActorRef carTrm3 = fakePassenger.getLastSender();
-                            fakePassenger.send(carTrm3,new TransportCoordination.CarBookingRequestMsg());
-                            fakePassenger.expectMsgClass(TransportCoordination.CarBookingConfirmedMsg.class);
-                            //uccido il transit request manager della macchina
-                            system.actorSelection("akka://default/user/car2/TRANSIT_MANAGER").tell(PoisonPill.getInstance(),null);
-                            fakePassenger.expectMsgClass(Car.CarBreakDown.class);
 
                             //aspettiamo sempre perché il shutdown del sistema potrebbe arrivare prima di alcuni messaggi che ci aspettiamo
                             expectNoMessage();

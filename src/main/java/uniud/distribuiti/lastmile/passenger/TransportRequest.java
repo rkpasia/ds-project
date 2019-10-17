@@ -146,7 +146,7 @@ public class TransportRequest extends AbstractActor {
 
         // Terminazione di un manager
         // Se termina durante lo stato di emissione...
-        if(this.status == TransportRequestStatus.EMITTED){
+        if(this.status == TransportRequestStatus.EMITTED || this.status == TransportRequestStatus.CONFIRMED){
             // lo rimuovo semplicemente dalla lista di selezionabili
             removeCarManagerFromMap(msg.getActor());
 

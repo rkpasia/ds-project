@@ -13,7 +13,7 @@ import uniud.distribuiti.lastmile.passenger.Passenger;
 
 import java.time.Duration;
 
-public class GeneralCarFailureTest {
+public class GeneralPassengerFailureTest {
 
     static ActorSystem system;
 
@@ -34,20 +34,19 @@ public class GeneralCarFailureTest {
     }
 
     @Test
-    public void CarBrokenBeforeArrived() {
+    public void PassengerBrokenBeforCarArrived() {
 
         new TestKit(system) {
             {
 
                 final ActorRef passenger = system.actorOf(Passenger.props(),"passenger");
+                final ActorRef passenger2 = system.actorOf(Passenger.props(),"passenger2");
                 final ActorRef car = system.actorOf(Car.props(), "car");
-                final ActorRef car2 = system.actorOf(Car.props(), "car2");
 
 
                 TestKit watcher = new TestKit(system);
                 watcher.watch(passenger);
-                watcher.watch(car);
-                watcher.watch(car2);
+                watcher.watch(passenger2);
 
                 within(
                         Duration.ofSeconds(20),
@@ -55,6 +54,7 @@ public class GeneralCarFailureTest {
 
                             //il passeggero fa una richiesta al sistema
                             passenger.tell(new Passenger.EmitRequestMessage(),null);
+                            passenger2.tell(new Passenger.EmitRequestMessage(),null);
 
                             try {
                                 Thread.sleep(1000);
@@ -62,28 +62,19 @@ public class GeneralCarFailureTest {
                                 e.printStackTrace();
                             }
 
-                            //una macchina si rompe prima della selezione
-                            car.tell(PoisonPill.getInstance(),null);
+                            passenger.tell(PoisonPill.getInstance(),null);
                             watcher.expectMsgClass(Terminated.class);
 
-                            passenger.tell(new Passenger.SelectCarMessage(),null);
-                            // creiamo un altra macchina nel sistema per essere certi che
-                            // il passeggero scelga car2 (supponiamo che non si sia prenotata all'inizio)
-                            final ActorRef car3 = system.actorOf(Car.props(), "car3");
-
-                            //una macchina si rompe dopo essere stata selezionata
-                            car2.tell(PoisonPill.getInstance(),null);
-                            watcher.expectMsgClass(Terminated.class);
+                            passenger2.tell(new Passenger.SelectCarMessage(),null);
 
                             try {
-                                Thread.sleep(5000);
+                                Thread.sleep(2000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
 
-
-                            passenger.tell(new Passenger.SelectCarMessage(),null);
-
+                            passenger2.tell(PoisonPill.getInstance(),null);
+                            watcher.expectMsgClass(Terminated.class);
 
                             watcher.expectNoMessage();
                             expectNoMessage();
@@ -94,44 +85,46 @@ public class GeneralCarFailureTest {
     }
 
     @Test
-    public void CarBrokeAfterArrived() {
+    public void PassengerBrokenAfterCarArrived() {
 
         new TestKit(system) {
             {
-
-                final ActorRef passenger = system.actorOf(Passenger.props(),"passenger");
+                final ActorRef passenger = system.actorOf(Passenger.props(), "passenger");
+                final ActorRef passenger2 = system.actorOf(Passenger.props(), "passenger2");
                 final ActorRef car = system.actorOf(Car.props(), "car");
-                final ActorRef car2 = system.actorOf(Car.props(), "car2");
 
 
                 TestKit watcher = new TestKit(system);
                 watcher.watch(passenger);
-                watcher.watch(car);
-                watcher.watch(car2);
+                watcher.watch(passenger2);
 
                 within(
                         Duration.ofSeconds(20),
                         () -> {
 
                             //il passeggero fa una richiesta al sistema
-                            passenger.tell(new Passenger.EmitRequestMessage(),null);
-
-                            passenger.tell(new Passenger.SelectCarMessage(),null);
-                            // creiamo un altra macchina nel sistema per essere certi che
-                            // il passeggero scelga car2 (supponiamo che non si sia prenotata all'inizio)
-                            final ActorRef car3 = system.actorOf(Car.props(), "car3");
+                            passenger.tell(new Passenger.EmitRequestMessage(), null);
+                            passenger2.tell(new Passenger.EmitRequestMessage(), null);
 
                             try {
-                                Thread.sleep(10000);
+                                Thread.sleep(1000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
 
-                            //una macchina si rompe dopo essere stata selezionata
-                            car2.tell(PoisonPill.getInstance(),null);
+                            passenger.tell(PoisonPill.getInstance(), null);
                             watcher.expectMsgClass(Terminated.class);
 
-                            passenger.tell(new Passenger.SelectCarMessage(),null);
+                            passenger2.tell(new Passenger.SelectCarMessage(), null);
+
+                            try {
+                                Thread.sleep(12000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            passenger2.tell(PoisonPill.getInstance(), null);
+                            watcher.expectMsgClass(Terminated.class);
 
                             watcher.expectNoMessage();
                             expectNoMessage();

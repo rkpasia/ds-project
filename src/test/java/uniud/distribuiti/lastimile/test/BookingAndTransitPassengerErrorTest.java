@@ -99,7 +99,6 @@ public class BookingAndTransitPassengerErrorTest {
                             fakeCar2.expectMsgClass(TransportCoordination.CarBookingRequestMsg.class);
                             fakeCar2.getLastSender().tell(new TransportCoordination.CarBookingConfirmedMsg(),fakeCar2.getRef());
 
-                            // TODO fallimento
 
                             try {
                                 Thread.sleep(5000);
@@ -109,11 +108,11 @@ public class BookingAndTransitPassengerErrorTest {
                             // la macchina si rompe quando sta andando dal passeggero
                             fakeCar2.send(fakeCar2.getRef(), PoisonPill.getInstance());
                             //il passeggero emette una nuova richiesta
-                            //fakeCar.expectMsgClass(Car.TransportRequestMessage.class);
+                            fakeCar.expectMsgClass(Duration.ofSeconds(6),Car.TransportRequestMessage.class);
 
                             // caso car Break down (si rompe la macchina con sopra il passeggero)
                             // visto che prima si e rotta la macchina in arrivo il passeggero dovrebbe inviare subito un altra richiesta
-                            /*
+
                             fakeCar3.expectMsgClass(Car.TransportRequestMessage.class);
                             fakeCar3.getLastSender().tell(new TransportCoordination.CarAvailableMsg(-1),fakeCar3.getRef());
                             passenger.tell(new Passenger.SelectCarMessage(),null);
@@ -122,10 +121,6 @@ public class BookingAndTransitPassengerErrorTest {
                             passenger.tell( new TransportCoordination.CarArrivedToPassenger(),null);
 
                             fakeCar3.send(fakeCar3.getRef(), PoisonPill.getInstance());
-
-
-                             */
-
 
                             //aspettiamo sempre perché il shutdown del sistema potrebbe arrivare prima di alcuni messaggi che ci aspettiamo
                             expectNoMessage();
