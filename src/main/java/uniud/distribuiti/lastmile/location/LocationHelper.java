@@ -1,8 +1,6 @@
 package uniud.distribuiti.lastmile.location;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.lang.*;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
@@ -19,7 +17,7 @@ public class LocationHelper {
 
     private void setupGraph(){
         ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream("graph.txt");
+        InputStream inputStream = classLoader.getResourceAsStream("graph1.txt");
         Scanner scan = new Scanner(inputStream);
         int row = scan.nextInt();
         graph = new int[row][row];
