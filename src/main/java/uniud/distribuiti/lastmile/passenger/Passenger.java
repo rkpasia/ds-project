@@ -112,6 +112,7 @@ public class Passenger extends AbstractActor {
             getContext().unwatch(transportRequest);
             getContext().stop(transportRequest);
         }
+        getContext().unwatch(this.car);
     }
 
     private void carBrokenInLocation(Car.BrokenLocation msg){
