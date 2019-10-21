@@ -50,6 +50,7 @@ public class Passenger extends AbstractActor {
         LocationHelper locationHelper = new LocationHelper();
         this.location = locationHelper.assignLocation();
         this.status = PassengerStatus.IDLE;
+        log.info("PASSEGGERO SPAWNATO");
     }
 
     // Inoltro richiesta di trasporto

@@ -53,6 +53,8 @@ public class Car extends AbstractActor {
         this.engine = new Engine(14.00);
         LocationHelper locationHelper = new LocationHelper();
         this.location = locationHelper.assignLocation();
+
+        log.info("MACCHINA SPAWNATA");
     }
 
     public static class TransportRequestMessage implements Serializable {
