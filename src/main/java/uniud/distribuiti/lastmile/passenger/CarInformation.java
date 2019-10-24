@@ -9,17 +9,17 @@ class CarInformation {
     private int routeLength;
     private ActorRef transportRequestManager;
 
-    CarInformation(int routeLength, ActorRef transportRequestManager){
+    public CarInformation(int routeLength, ActorRef transportRequestManager){
 
         this.routeLength = routeLength;
         this.transportRequestManager = transportRequestManager;
     }
 
-     int getRouteLength() {
+    public int getRouteLength() {
         return routeLength;
     }
 
-    ActorRef getTransportRequestManager() {
+    public ActorRef getTransportRequestManager() {
         return transportRequestManager;
     }
 
