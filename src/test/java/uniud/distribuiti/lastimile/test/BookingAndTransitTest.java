@@ -16,7 +16,7 @@ import java.time.Duration;
 
 public class BookingAndTransitTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass

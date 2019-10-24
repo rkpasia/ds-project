@@ -1,6 +1,8 @@
 package uniud.distribuiti.lastimile.test;
 
-import akka.actor.*;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.javadsl.TestKit;
@@ -13,11 +15,10 @@ import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 import java.time.Duration;
-import java.util.ArrayList;
 
 public class PassengerTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -84,7 +85,7 @@ public class PassengerTest  {
 
                 // Probe macchina per test
                 class CarProbe extends TestKit {
-                    public CarProbe(){
+                    private CarProbe(){
                         super(system);
                         ActorRef mediator = DistributedPubSub.get(system).mediator();
                         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", this.getRef()), this.getRef());

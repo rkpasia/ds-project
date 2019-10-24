@@ -15,7 +15,7 @@ import java.time.Duration;
 
 public class GeneralCarFailureTest {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -39,7 +39,7 @@ public class GeneralCarFailureTest {
         new TestKit(system) {
             {
 
-                final ActorRef passenger = system.actorOf(Passenger.props(),"passenger");
+                final ActorRef passenger = system.actorOf(Passenger.props(),"passenger2");
                 final ActorRef car = system.actorOf(Car.props(), "car");
                 final ActorRef car2 = system.actorOf(Car.props(), "car2");
 
@@ -87,8 +87,14 @@ public class GeneralCarFailureTest {
 
                             watcher.expectNoMessage();
                             expectNoMessage();
+                            system.stop(car3);
                             return null;
                         });
+                system.stop(passenger);
+                system.stop(car);
+                system.stop(car2);
+
+
             }
         };
     }
@@ -134,9 +140,14 @@ public class GeneralCarFailureTest {
                             passenger.tell(new Passenger.SelectCarMessage(),null);
 
                             watcher.expectNoMessage();
+                            system.stop(car3);
                             expectNoMessage();
                             return null;
                         });
+                system.stop(passenger);
+                system.stop(car);
+                system.stop(car2);
+
             }
         };
     }

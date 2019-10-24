@@ -68,10 +68,10 @@ public class BookingAndTransitCarErrorTest {
                             //fallisce se la macchina nasce sul nodo 0 (perché manda i messaggi in contemporanea)
                             fakePassenger.send(carTrm,new TransportCoordination.CarBookingRequestMsg());
                             fakePassenger.expectMsgClass(TransportCoordination.CarBookingConfirmedMsg.class);
-                            fakePassenger.expectMsgClass(Duration.ofSeconds(20),TransportCoordination.CarArrivedToPassenger.class);
-                            fakePassenger.expectMsgClass(Duration.ofSeconds(20),TransportCoordination.UpdateLocation.class);
-                            fakePassenger.expectMsgClass(Duration.ofSeconds(20),TransportCoordination.UpdateLocation.class);
-                            fakePassenger.expectMsgClass(Duration.ofSeconds(20),TransportCoordination.DestinationReached.class);
+                            fakePassenger.expectMsgClass(Duration.ofSeconds(30),TransportCoordination.CarArrivedToPassenger.class);
+                            fakePassenger.expectMsgClass(Duration.ofSeconds(30),TransportCoordination.UpdateLocation.class);
+                            fakePassenger.expectMsgClass(Duration.ofSeconds(30),TransportCoordination.UpdateLocation.class);
+                            fakePassenger.expectMsgClass(Duration.ofSeconds(30),TransportCoordination.DestinationReached.class);
 
                             try {
                                 Thread.sleep(10000);
@@ -89,7 +89,7 @@ public class BookingAndTransitCarErrorTest {
                             //la macchina dyovrebbe comunque dare la conferma al passeggero
                             if(fakePassenger.getLastSender() != car)
                                 throw new AssertionError("il trm è morto la macchina dovrebbe avvisare il passeggero");
-                            fakePassenger.expectMsgClass(Duration.ofSeconds(20),TransportCoordination.CarArrivedToPassenger.class);
+                            fakePassenger.expectMsgClass(Duration.ofSeconds(30),TransportCoordination.CarArrivedToPassenger.class);
                             // ci aspettiamo anche un update location perché quando manda il mess carArrived manda anche un UpdateLocation
                             fakePassenger.expectMsgClass(TransportCoordination.UpdateLocation.class);
 

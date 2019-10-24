@@ -12,15 +12,15 @@ import akka.cluster.ClusterEvent.MemberRemoved;
 
 public class ClusterEventsListener extends AbstractActor {
 
-    LoggingAdapter log = Logging.getLogger(getContext().system(), this);
+    private LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
-    Cluster cluster = Cluster.get(getContext().system());
+    private Cluster cluster = Cluster.get(getContext().system());
 
     @Override
     public void preStart(){
         cluster.subscribe(
                 self(),
-                (ClusterEvent.SubscriptionInitialStateMode) ClusterEvent.initialStateAsEvents(),
+                 ClusterEvent.initialStateAsEvents(),
                 MemberEvent.class,
                 UnreachableMember.class
         );
@@ -33,15 +33,9 @@ public class ClusterEventsListener extends AbstractActor {
     @Override
     public Receive createReceive(){
         return receiveBuilder()
-                .match(MemberUp.class, mUp -> {
-                    log.info("Member is Up: {}", mUp.member());
-                })
-                .match(UnreachableMember.class, mUnreachable -> {
-                    log.info("Member detected as unreachable: {}", mUnreachable.member());
-                })
-                .match(MemberRemoved.class, mRemoved -> {
-                    log.info("Member is Removed: {}", mRemoved.member());
-                })
+                .match(MemberUp.class, mUp -> log.info("Member is Up: {}", mUp.member()))
+                .match(UnreachableMember.class, mUnreachable -> log.info("Member detected as unreachable: {}", mUnreachable.member()))
+                .match(MemberRemoved.class, mRemoved -> log.info("Member is Removed: {}", mRemoved.member()))
                 .match(MemberEvent.class, message -> {
                     // ignore
                 })

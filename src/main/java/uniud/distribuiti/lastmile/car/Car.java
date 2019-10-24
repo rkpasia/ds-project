@@ -40,7 +40,7 @@ public class Car extends AbstractActor {
     private ActorRef transitManager;
 
     public static Props props(){
-        return Props.create(Car.class, () -> new Car());
+        return Props.create(Car.class, Car::new);
     }
 
     public Car(){
@@ -51,8 +51,12 @@ public class Car extends AbstractActor {
         // Inizializzazione standard proprietà macchina
         this.fuelTank = new FuelTank(20);
         this.engine = new Engine(14.00);
-        LocationHelper locationHelper = new LocationHelper();
-        this.location = locationHelper.assignLocation();
+        try {
+            LocationHelper locationHelper = new LocationHelper();
+            this.location = locationHelper.assignLocation();
+        }catch (Exception ex){
+                log.info(ex.getMessage());
+        }
     }
 
     public static class TransportRequestMessage implements Serializable {
@@ -64,11 +68,11 @@ public class Car extends AbstractActor {
             this.destination = dest;
         }
 
-        public int getDestination(){
+        int getDestination(){
             return this.destination;
         }
 
-        public int getPassengerLocation(){
+        int getPassengerLocation(){
             return this.passengerLocation;
         }
     }
@@ -84,7 +88,7 @@ public class Car extends AbstractActor {
         }
     }
 
-    public static class RefuelCompleted {}
+    private static class RefuelCompleted {}
 
     private void carBooking(TransportCoordination.CarBookingRequestMsg msg){
 
@@ -170,6 +174,7 @@ public class Car extends AbstractActor {
             this.status = CarStatus.AVAILABLE;
         }
         getContext().unwatch(passenger);
+        getContext().unwatch(bookingManager);
         getContext().unwatch(transitManager);
         getContext().stop(transitManager);
         getContext().stop(bookingManager);
@@ -258,7 +263,7 @@ public class Car extends AbstractActor {
                 .match(CarBreakDown.class, this::carBroken)
                 .match(BrokenLocation.class, this::carBrokenLocation)
                 .match(RefuelCompleted.class, this::carRefuelCompleted)
-                .match(TransportCoordination.CarArrivedToPassenger.class, msg -> {this.status= CarStatus.TRANSIT_WITH_PASSENGER;})
+                .match(TransportCoordination.CarArrivedToPassenger.class, msg -> this.status= CarStatus.TRANSIT_WITH_PASSENGER)
                 .match(Terminated.class, this::terminationHandling)
                 .matchAny(o -> log.info("MESSAGGIO NON SUPPORTATO"))
                 .build();

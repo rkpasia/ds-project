@@ -29,7 +29,7 @@ public class TransitManager extends AbstractActorWithTimers {
     private static final class StartTick {}             // Tick inizio transito
     private static final class TransitTick {}           // Tick di transito
 
-    public TransitManager(TransportRoute route, Location passengerLocation, ActorRef passenger){
+    private TransitManager(TransportRoute route, Location passengerLocation, ActorRef passenger){
         this.route = route;
         this.passenger = passenger;
         this.passengerLocation = passengerLocation;
@@ -82,9 +82,8 @@ public class TransitManager extends AbstractActorWithTimers {
         return receiveBuilder()
                 .match(
                         StartTick.class,
-                        msg -> {
-                            getTimers().startPeriodicTimer(TICK_KEY, new TransitTick(), Duration.ofSeconds(5));
-                        }
+                        msg -> getTimers().startPeriodicTimer(TICK_KEY, new TransitTick(), Duration.ofSeconds(5))
+
                 )
                 .match(
                         TransitTick.class,

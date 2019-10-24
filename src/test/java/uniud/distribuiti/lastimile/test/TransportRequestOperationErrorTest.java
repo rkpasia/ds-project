@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Kill;
 import akka.actor.PoisonPill;
-import akka.cluster.Cluster;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.javadsl.TestKit;
@@ -19,7 +18,7 @@ import java.time.Duration;
 
 public class TransportRequestOperationErrorTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -48,17 +47,12 @@ public class TransportRequestOperationErrorTest  {
 
                 TestKit fakePassenger = new TestKit(system);
                 TestKit fakeCar = new TestKit(system);
-                TestKit fakeTr = new TestKit(system);
 
                 //iscriviamo la finta macchina ad un pubsub come la vera macchina
                 // ci aspettiamo che l'iscrizione vada a buon fine
                 ActorRef mediator = DistributedPubSub.get(system).mediator();
                 mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", fakeCar.getRef()), getRef());
                 expectMsgClass(DistributedPubSubMediator.SubscribeAck.class);
-
-
-
-                Cluster cluster = Cluster.get(system);
 
                 within(
                         Duration.ofSeconds(10),

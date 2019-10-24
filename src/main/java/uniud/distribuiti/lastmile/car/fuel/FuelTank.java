@@ -11,7 +11,7 @@ public class FuelTank {
     }
 
     public boolean hasEnoughFuel(double fuelConsumption){
-        return (fuel - fuelConsumption) < 0 ? false : true;
+        return !((fuel - fuelConsumption) < 0);
     }
 
     // Carburante consumato
@@ -22,8 +22,7 @@ public class FuelTank {
     // Macchina ha bisogno di carburante se ne ha meno del 20%
     public boolean needFuel(){
         double percentLeft = fuel / TANK_CAPACITY * 100;
-        if(percentLeft < 20) return true;
-        return false;
+        return percentLeft < 20;
     }
 
     // Assumiamo che quando una macchina fa rifornimento, fa il pieno

@@ -9,7 +9,6 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
-import uniud.distribuiti.lastmile.location.TransportRoute;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
 
 // Transport Request Manager acotr
@@ -23,17 +22,6 @@ public class TransportRequestMngr extends AbstractActor {
 
     // Riferimento ad attore per coordinamento richiesta di trasporto
     private ActorRef transportRequest;
-    private ActorRef passengerRef;
-
-    private RequestManagerStatus status;
-    private enum RequestManagerStatus {
-        WAITING,            // In attesa di conferma da parte del passeggero
-        AVAILABLE,          // Macchina disponibile
-        NOT_AVAILABLE,      // Macchina non disponibile
-        EXPIRED,            // Si presume che la macchina non venga più considerata dal passeggero
-        REJECTED,           // Macchina è stata respinta dal passeggero
-        CONFIRMED,          // Macchina è stata confermata dal passeggero
-    }
 
     // Percorso che dovrà fare la macchina
     private Route route;
@@ -43,11 +31,10 @@ public class TransportRequestMngr extends AbstractActor {
         return Props.create(TransportRequestMngr.class, () -> new TransportRequestMngr(transportRequest, route, passengerLocation));
     }
 
-    public TransportRequestMngr(ActorRef transportRequest, Route route, Location passengerLocation){
+    private TransportRequestMngr(ActorRef transportRequest, Route route, Location passengerLocation){
         this.transportRequest = transportRequest;
         this.route = route;
         this.passengerLocation = passengerLocation;
-        this.status = RequestManagerStatus.WAITING;
         this.transportRequest.tell(new TransportCoordination.CarAvailableMsg(route.getDistance()), getSelf());
 
         // Iscrizione a ABORT_REQUEST channel
@@ -64,25 +51,22 @@ public class TransportRequestMngr extends AbstractActor {
 
         if(msg instanceof TransportCoordination.CarBookingRequestMsg) {
             log.info("INOLTRO RICHIESTA A MACCHINA");
-            this.passengerRef = getSender();
+            ActorRef passengerRef = getSender();
             getContext().getParent().tell(new TransportCoordination.CarBookingRequestMsg(passengerRef, route, passengerLocation), getSelf());
         }
 
         if(msg instanceof TransportCoordination.CarBookingConfirmedMsg) {
             log.info("RICEVUTA CONFERMA DA MACCHINA, RISPONDO A PASSEGGERO");
-            this.status = RequestManagerStatus.CONFIRMED;
             transportRequest.tell(msg, getContext().getParent());
         }
 
         if(msg instanceof TransportCoordination.CarBookingRejectMsg){
             log.info("RICEVUTA DISDETTA DA MACCHINA, RISPONDO A PASSEGGERO");
-            this.status = RequestManagerStatus.NOT_AVAILABLE;
             transportRequest.tell(msg, getSelf());
         }
 
         if(msg instanceof TransportCoordination.CarHasBeenBooked){
             log.info("RICEVUTA NOTIFICA DA MACCHINA DI UNA PRENOTAZIONE DA UN ALTRO PASSEGGERO, RISPONDO A PASSEGGERO");
-            this.status = RequestManagerStatus.NOT_AVAILABLE;
             transportRequest.tell(new TransportCoordination.CarUnavailableMsg(), getSelf());
             getContext().stop(getSelf());
         }

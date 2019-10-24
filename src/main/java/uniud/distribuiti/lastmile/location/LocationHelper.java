@@ -11,29 +11,30 @@ public class LocationHelper {
 
     private static int[][] graph;
 
-    public LocationHelper() {
+    public LocationHelper() throws Exception {
         this.setupGraph();
     }
 
-    private void setupGraph(){
-        ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream("graph1.txt");
-        Scanner scan = new Scanner(inputStream);
-        int row = scan.nextInt();
-        graph = new int[row][row];
-        for(int r=0; r<row; ++r) {
-            for (int c = 0; c < row; ++c) {
-                graph[r][c] = scan.nextInt();
+    private void setupGraph() throws Exception{
+            ClassLoader classLoader = getClass().getClassLoader();
+            InputStream inputStream = classLoader.getResourceAsStream("graph.txt");
+            if(inputStream == null) throw new Exception("Impossibile caricare il grafo");
+            Scanner scan = new Scanner(inputStream);
+            int row = scan.nextInt();
+            graph = new int[row][row];
+            for (int r = 0; r < row; ++r) {
+                for (int c = 0; c < row; ++c) {
+                    graph[r][c] = scan.nextInt();
+                }
             }
-        }
     }
 
-    public static Location assignLocation(){
+    public  Location assignLocation(){
         int dim = LocationHelper.graph[0].length;
         return  new Location(new Random().nextInt(dim));
     }
 
-    public static Route shortestPath  (int startVertex, int finalVertex) {
+    private static Route shortestPath(int startVertex, int finalVertex) {
         int nVertices = graph[0].length;
 
         int[] shortestDistances = new int[nVertices];
@@ -92,7 +93,7 @@ public class LocationHelper {
     private static ArrayList<Integer> makePath(int startVertex,
                                   int[] parents)
     {
-        ArrayList<Integer> partialPath = new ArrayList<Integer>();
+        ArrayList<Integer> partialPath = new ArrayList<>();
 
         if (startVertex == NO_PARENT)
         {

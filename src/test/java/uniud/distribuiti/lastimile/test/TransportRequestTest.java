@@ -16,7 +16,7 @@ import java.time.Duration;
 
 public class TransportRequestTest {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     @BeforeClass
     public static void setup(){

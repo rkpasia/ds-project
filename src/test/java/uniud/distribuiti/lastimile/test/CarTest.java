@@ -20,7 +20,7 @@ import java.time.Duration;
 
 public class CarTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -81,15 +81,10 @@ public class CarTest  {
                             // stiamo testando solo il singolo attore macchina
                             subject.tell(new TransportCoordination.DestinationReached(new Location(0)),getRef());
 
-                            // qui ci aspettiamo un messaggio perché in precedenza abbiamo effettuato una richiesta di booking
-                            subject.tell(new Car.CarBreakDown(),getRef());
-                            expectMsgClass(Car.BrokenLocation.class);
-
-                            subject.tell(new Car.BrokenLocation(new Location(0)),getRef());
-
                             expectNoMessage();
                             return null;
                         });
+                system.stop(subject);
             }
         };
     }
@@ -133,6 +128,7 @@ public class CarTest  {
                 // Se il TransitManager ha un problema, è assunto che la macchina sia rotta
                 // Il passeggero si aspetta il messaggio che indica la rottura
                 passenger.expectMsgClass(Duration.ofSeconds(10), Car.CarBreakDown.class);
+                system.stop(car);
             }
         };
 

@@ -19,21 +19,22 @@ public class Passenger extends AbstractActor {
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
     public static Props props(){
-        return Props.create(Passenger.class, () -> new Passenger());
+        return Props.create(Passenger.class, Passenger::new);
     }
 
     public static class EmitRequestMessage {}
 
     public static class SelectCarMessage {}
 
-    public static class SelectionStopped {}
+    static class SelectionStopped {}
 
-    public static class TransportRequestCompromised {}
+    private static class TransportRequestCompromised {}
 
     private ActorRef mediator = DistributedPubSub.get(getContext().system()).mediator();
 
     private ActorRef transportRequest;
     private ActorRef car;
+    private int dest;
 
     private Location location;
     private PassengerStatus status;
@@ -47,8 +48,13 @@ public class Passenger extends AbstractActor {
     }
 
     public Passenger(){
-        LocationHelper locationHelper = new LocationHelper();
-        this.location = locationHelper.assignLocation();
+        try {
+            LocationHelper locationHelper = new LocationHelper();
+            this.location = locationHelper.assignLocation();
+            this.dest = locationHelper.assignLocation().getNode();
+        }catch (Exception ex){
+                log.info(ex.getMessage());
+        }
         this.status = PassengerStatus.IDLE;
     }
 
@@ -63,7 +69,7 @@ public class Passenger extends AbstractActor {
 
         // In questo momento tutti i passeggeri vogliono andare al nodo 0
         // TODO: Miglioramento del messaggio per gestire le location inviate
-        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), dest)), transportRequest);
 
         // Richiesta emessa - sta gestendo la TransportRequest incaricata
         this.status = PassengerStatus.REQUEST_EMITTED;
@@ -87,7 +93,6 @@ public class Passenger extends AbstractActor {
     private void carSelectionStopped(SelectionStopped msg){
         // La selezione della macchina si è interrotta per un problema
         // Devo selezionare un altra macchina
-        // TODO: Avviso interfaccia che la selezione della macchina si è interrotta
         log.error("SELEZIONE MACCHINA INTERROTTA, PROVARE CON UN ALTRA MACCHINA");
         // Dovrà arrivare un nuovo messaggio di richiesta selezione dall'utente
         this.status = PassengerStatus.REQUEST_EMITTED;  // Torno a stato di richiesta emessa
@@ -120,16 +125,14 @@ public class Passenger extends AbstractActor {
         this.location.setNode(msg.location.getNode());
         //transportRequest.tell(msg, getSelf());
         // Richiesta nuova macchina per passeggero
-        // TODO: Ricordarsi di aggiornare la destinazione della macchina quando non sara più statica
-        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), dest)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
         // TODO: Scheduling messaggio automatico per prenotare la macchina più vicina disponibile
     }
 
     private void carBroken(Car.CarBreakDown msg){
         log.info("MACCHINA HA AVUTO PROBLEMA MENTRE IN ARRIVO, RICHIEDO NUOVA");
-        // TODO: Ricordarsi di aggiornare la destinazione della macchina quando non sara più statica
-        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), 0)), transportRequest);
+        mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), dest)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
         // A questo punto l'utente può scegliere dall'applicazione la macchina nuova
         // TODO: Avviso interfaccia della nuova disponibilità di macchine a soddisfare la richiesta, eventualmente.
