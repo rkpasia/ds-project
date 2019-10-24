@@ -4,22 +4,22 @@ import akka.actor.ActorRef;
 
 import java.util.Comparator;
 
-public class CarInformation {
+class CarInformation {
 
     private int routeLength;
     private ActorRef transportRequestManager;
 
-    public CarInformation(int routeLength, ActorRef transportRequestManager){
+    CarInformation(int routeLength, ActorRef transportRequestManager){
 
         this.routeLength = routeLength;
         this.transportRequestManager = transportRequestManager;
     }
 
-    public int getRouteLength() {
+     int getRouteLength() {
         return routeLength;
     }
 
-    public ActorRef getTransportRequestManager() {
+    ActorRef getTransportRequestManager() {
         return transportRequestManager;
     }
 

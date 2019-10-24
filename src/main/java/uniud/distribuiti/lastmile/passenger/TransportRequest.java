@@ -113,7 +113,6 @@ public class TransportRequest extends AbstractActor {
             this.status = TransportRequestStatus.BOOKING;
             log.info("PRENOTO LA MACCHINA {}", cars.get(0).getTransportRequestManager().path().parent().name());
         } else {
-            // TODO: Che cosa fa il passeggero quando non ci sono più macchine disponibili?
             log.warning("NON CI SONO MACCHINE DISPONIBILI!!!");
         }
     }
@@ -134,9 +133,7 @@ public class TransportRequest extends AbstractActor {
         log.info("PRENOTAZIONE MACCHINA RIFIUTATA, RIMUOVO MACCHINA DALLA LISTA {}", getSender());
 
         removeCarManagerFromMap(getSender());
-
-        // TODO: Che facciamo se la prenotazione è respinta?
-        //  Bisogna avvisare il passeggero (quindi dare feedback anche all'utente)
+        context().parent().tell(new TransportCoordination.CarBookingRejectMsg(),getSelf());
     }
 
     // Metodo per la gestione terminazioni attori in monitoraggio
@@ -149,9 +146,6 @@ public class TransportRequest extends AbstractActor {
         if(this.status == TransportRequestStatus.EMITTED || this.status == TransportRequestStatus.CONFIRMED){
             // lo rimuovo semplicemente dalla lista di selezionabili
             removeCarManagerFromMap(msg.getActor());
-
-            //TODO Possibile la valutazione di nuova richiesta alla macchina per sapere la disponibilità nuovamente
-            // (non strettamente necessario)
         }
 
         if(this.status == TransportRequestStatus.BOOKING){
