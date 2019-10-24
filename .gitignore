@@ -1,2 +1,14 @@
 /.idea
 /target
+/project/project/
+/project/target/
+
+/passenger/.idea/
+/passenger/target/
+/passenger/project/target/
+/passenger/project/project/
+
+/car/.idea/
+/car/target/
+/car/project/project/
+/car/project/target/

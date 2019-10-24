@@ -57,6 +57,7 @@ public class Car extends AbstractActor {
         }catch (Exception ex){
                 log.info(ex.getMessage());
         }
+        log.info("MACCHINA ISTANZIATA");
     }
 
     public static class TransportRequestMessage implements Serializable {

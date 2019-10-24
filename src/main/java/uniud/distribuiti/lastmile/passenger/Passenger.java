@@ -58,6 +58,7 @@ public class Passenger extends AbstractActor {
                 log.info(ex.getMessage());
         }
         this.status = PassengerStatus.IDLE;
+        log.info("PASSEGGERO ISTANZIATO");
     }
 
     // Inoltro richiesta di trasporto
