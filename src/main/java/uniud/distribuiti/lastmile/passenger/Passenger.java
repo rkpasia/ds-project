@@ -52,6 +52,8 @@ public class Passenger extends AbstractActor {
             LocationHelper locationHelper = new LocationHelper();
             this.location = locationHelper.assignLocation();
             this.dest = locationHelper.assignLocation().getNode();
+            while (this.location.getNode() == this.dest)
+            this.dest = locationHelper.assignLocation().getNode();
         }catch (Exception ex){
                 log.info(ex.getMessage());
         }
@@ -68,7 +70,6 @@ public class Passenger extends AbstractActor {
         }
 
         // In questo momento tutti i passeggeri vogliono andare al nodo 0
-        // TODO: Miglioramento del messaggio per gestire le location inviate
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), dest)), transportRequest);
 
         // Richiesta emessa - sta gestendo la TransportRequest incaricata
@@ -127,7 +128,6 @@ public class Passenger extends AbstractActor {
         // Richiesta nuova macchina per passeggero
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), dest)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
-        // TODO: Scheduling messaggio automatico per prenotare la macchina più vicina disponibile
     }
 
     private void carBroken(Car.CarBreakDown msg){
@@ -135,7 +135,6 @@ public class Passenger extends AbstractActor {
         mediator.tell(new DistributedPubSubMediator.Publish("REQUEST", new Car.TransportRequestMessage(location.getNode(), dest)), transportRequest);
         this.status = PassengerStatus.REQUEST_EMITTED;
         // A questo punto l'utente può scegliere dall'applicazione la macchina nuova
-        // TODO: Avviso interfaccia della nuova disponibilità di macchine a soddisfare la richiesta, eventualmente.
     }
 
     private void noTransportAvailable(ClusterServiceMessages msg){
@@ -189,10 +188,15 @@ public class Passenger extends AbstractActor {
 
     // Gestione ricezione messaggio di compromissione transport request
     private void requestCompromised(TransportRequestCompromised msg){
-        // TODO: Notifica utente che la richiesta ha avuto un problema
         // Procedo con l'emissione automatica di una nuova richiesta di trasporto
         log.info("RICHIESTA DI TRASPORTO COMPROMESSA");
         getSelf().tell(new EmitRequestMessage(), getSelf());
+    }
+    private void bookingRejected(TransportCoordination msg){
+        if(status == PassengerStatus.SELECTION_REQUESTED){
+        log.info("PRENOTAZIONE MACCHINA RIFIUTATA, PROVO CON UN ALTRA MACCHINA");
+        getSelf().tell(new SelectCarMessage(),getSelf());
+        }else log.info("PRENOTAZIONE MACCHINA RIFIUTATA, NON SONO IN SELECTION_REQUEST ANNULLO LA SELEZIONE");
     }
 
     @Override
@@ -211,6 +215,7 @@ public class Passenger extends AbstractActor {
                 .match(TransportRequestCompromised.class, this::requestCompromised)
                 .match(ClusterServiceMessages.NoCarsAvailable.class, this::noTransportAvailable)
                 .match(Terminated.class, this::terminationHandling)
+                .match(TransportCoordination.CarBookingRejectMsg.class, this::bookingRejected)
                 .matchAny(o -> log.info("received unknown message"))
                 .build();
     }

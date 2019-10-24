@@ -42,7 +42,7 @@ public class BookingAndTransitCarErrorTest {
             {
 
                 final ActorRef car = system.actorOf(Car.props(), "car");
-                final ActorRef car2 = system.actorOf(Car.props(), "car2");
+                system.actorOf(Car.props(), "car2");
 
                 TestKit fakePassenger = new TestKit(system);
                 TestKit fakeCar = new TestKit(system);

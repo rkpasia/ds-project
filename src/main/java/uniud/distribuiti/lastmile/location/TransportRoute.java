@@ -1,6 +1,5 @@
 package uniud.distribuiti.lastmile.location;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 public class TransportRoute {
