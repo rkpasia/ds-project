@@ -8,14 +8,13 @@ import akka.testkit.javadsl.TestKit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import uniud.distribuiti.lastmile.car.Car;
 import uniud.distribuiti.lastmile.passenger.Passenger;
 
 import java.time.Duration;
 
 public class SameActorPathTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -39,7 +38,7 @@ public class SameActorPathTest  {
             {
 
                 final ActorRef passenger = system.actorOf(Passenger.props(), "Passenger");
-                final ActorRef car = system.actorOf(Car.props(), "car");
+                //final ActorRef car = system.actorOf(Car.props(), "car");
                 TestKit watcher = new TestKit(system);
 
 

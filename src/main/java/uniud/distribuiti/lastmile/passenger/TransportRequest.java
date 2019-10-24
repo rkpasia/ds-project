@@ -30,16 +30,15 @@ public class TransportRequest extends AbstractActor {
 
     private HashMap<ActorRef,CarInformation> availableCarManagers = new HashMap<>();
     private int requestCallbacks = 0;
-    private final int MAX_REQUEST_CALLBACKS = 6;
     private ActorRef selectedCarManager;
 
-    public static class RequestMonitoring {}
+    private static class RequestMonitoring {}
 
     public static Props props(){
-        return Props.create(TransportRequest.class, () -> new TransportRequest());
+        return Props.create(TransportRequest.class, TransportRequest::new);
     }
 
-    public TransportRequest(){
+    private TransportRequest(){
         this.status = TransportRequestStatus.EMITTED;
     }
 
@@ -64,6 +63,7 @@ public class TransportRequest extends AbstractActor {
             log.info("NESSUNA DISPONIBILITA RICEVUTA, RIPROVO");
             getContext().parent().tell(new Passenger.EmitRequestMessage(), getSelf());
             this.requestCallbacks += 1;
+            int MAX_REQUEST_CALLBACKS = 6;
             if(requestCallbacks <= MAX_REQUEST_CALLBACKS){
                 requestMonitoring();
             } else {
@@ -104,7 +104,7 @@ public class TransportRequest extends AbstractActor {
 
         // Ordino la lista di macchine disponibili per EstTransTime e prendo il primo
         if(!availableCarManagers.isEmpty()){
-            ArrayList<CarInformation> cars = new ArrayList<CarInformation>(availableCarManagers.values());
+            ArrayList<CarInformation> cars = new ArrayList<>(availableCarManagers.values());
             cars.sort(new CarInformation.SortByEstTransTime());
             CarInformation car = cars.get(0);
 
@@ -210,9 +210,7 @@ public class TransportRequest extends AbstractActor {
                         this::terminationHandling
                 )
                 .matchAny(
-                        o -> {
-                            log.info("{} - MESSAGGIO NON SUPPORTATO - {}", getSelf(), o);
-                        }
+                        o -> log.info("{} - MESSAGGIO NON SUPPORTATO - {}", getSelf(), o)
                 )
                 .build();
     }

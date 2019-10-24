@@ -3,8 +3,6 @@ package uniud.distribuiti.lastmile.transportRequestCoordination;
 import akka.actor.ActorRef;
 import uniud.distribuiti.lastmile.location.Location;
 import uniud.distribuiti.lastmile.location.Route;
-import uniud.distribuiti.lastmile.passenger.TransportRequest;
-
 import java.io.Serializable;
 
 public class TransportCoordination implements Serializable {

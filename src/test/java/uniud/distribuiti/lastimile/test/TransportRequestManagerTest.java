@@ -17,7 +17,7 @@ import java.util.ArrayList;
 
 public class TransportRequestManagerTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -41,7 +41,7 @@ public class TransportRequestManagerTest  {
             {
                 TestKit parent = new TestKit(system);
                 final ActorRef transportRequestManager = parent.childActorOf(TransportRequestMngr.props
-                        (getRef(),new Route(0,new ArrayList<Integer>()),new Location(0)), "TransportRequestManager");
+                        (getRef(),new Route(0, new ArrayList<>()),new Location(0)), "TransportRequestManager");
 
 
 

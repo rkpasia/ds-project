@@ -3,18 +3,13 @@ package uniud.distribuiti.lastimile.test;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
-import akka.actor.Props;
 import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
-import akka.testkit.TestProbe;
 import akka.testkit.javadsl.TestKit;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import uniud.distribuiti.lastmile.car.Car;
-import uniud.distribuiti.lastmile.cluster.ClusterEventsListener;
 import uniud.distribuiti.lastmile.passenger.Passenger;
 import uniud.distribuiti.lastmile.passenger.TransportRequest;
 import uniud.distribuiti.lastmile.transportRequestCoordination.TransportCoordination;
@@ -23,7 +18,7 @@ import java.time.Duration;
 
 public class TransportRequestActorTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -84,7 +79,7 @@ public class TransportRequestActorTest  {
             {
 
                 class CarProbe extends TestKit {
-                    public CarProbe(){
+                    private CarProbe(){
                         super(system);
                         ActorRef mediator = DistributedPubSub.get(system).mediator();
                         mediator.tell(new DistributedPubSubMediator.Subscribe("REQUEST", this.getRef()), this.getRef());
@@ -92,7 +87,7 @@ public class TransportRequestActorTest  {
                 }
 
                 class ManagerProbe extends TestKit {
-                    public ManagerProbe(){
+                    private ManagerProbe(){
                         super(system);
                         ActorRef mediator = DistributedPubSub.get(system).mediator();
                         mediator.tell(new DistributedPubSubMediator.Subscribe("ABORT_REQUEST", this.getRef()), this.getRef());

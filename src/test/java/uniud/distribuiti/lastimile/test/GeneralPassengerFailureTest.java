@@ -15,7 +15,7 @@ import java.time.Duration;
 
 public class GeneralPassengerFailureTest {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -80,6 +80,9 @@ public class GeneralPassengerFailureTest {
                             expectNoMessage();
                             return null;
                         });
+                system.stop(passenger);
+                system.stop(passenger2);
+                system.stop(car);
             }
         };
     }
@@ -130,6 +133,9 @@ public class GeneralPassengerFailureTest {
                             expectNoMessage();
                             return null;
                         });
+                system.stop(passenger);
+                system.stop(passenger2);
+                system.stop(car);
             }
         };
     }

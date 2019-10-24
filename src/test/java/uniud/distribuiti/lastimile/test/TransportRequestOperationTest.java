@@ -16,7 +16,7 @@ import java.time.Duration;
 
 public class TransportRequestOperationTest  {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -40,7 +40,7 @@ public class TransportRequestOperationTest  {
             {
 
                 final ActorRef passenger = system.actorOf(Passenger.props(), "Passenger");
-                final ActorRef car = system.actorOf(Car.props(), "car");
+                system.actorOf(Car.props(), "car");
 
                 TestKit fakePassenger = new TestKit(system);
                 TestKit fakeCar = new TestKit(system);

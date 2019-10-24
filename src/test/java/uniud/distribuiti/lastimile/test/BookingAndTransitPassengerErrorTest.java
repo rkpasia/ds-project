@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 public class BookingAndTransitPassengerErrorTest {
 
-    static ActorSystem system;
+    private static ActorSystem system;
 
     // inizzializziamo l'actor system da testare
     @BeforeClass
@@ -70,7 +70,10 @@ public class BookingAndTransitPassengerErrorTest {
                             ActorRef tr = fakeCar.getLastSender();
                             fakeCar.getLastSender().tell(new TransportCoordination.CarAvailableMsg(-1),fakeCar.getRef());
                             passenger.tell(new Passenger.SelectCarMessage(),null);
+                            fakeCar.expectMsgClass(TransportCoordination.CarBookingRequestMsg.class);
                             tr.tell(PoisonPill.getInstance(),null);
+
+
                             fakeCar.expectMsgClass(TransportCoordination.AbortTransportRequest.class);
 
 
@@ -108,7 +111,6 @@ public class BookingAndTransitPassengerErrorTest {
                             // la macchina si rompe quando sta andando dal passeggero
                             fakeCar2.send(fakeCar2.getRef(), PoisonPill.getInstance());
                             //il passeggero emette una nuova richiesta
-                            fakeCar.expectMsgClass(Duration.ofSeconds(6),Car.TransportRequestMessage.class);
 
                             // caso car Break down (si rompe la macchina con sopra il passeggero)
                             // visto che prima si e rotta la macchina in arrivo il passeggero dovrebbe inviare subito un altra richiesta
@@ -126,6 +128,10 @@ public class BookingAndTransitPassengerErrorTest {
                             expectNoMessage();
                             return null;
                         });
+                system.stop(passenger);
+                system.stop(fakeCar.getRef());
+                system.stop(fakeCar2.getRef());
+                system.stop(fakeCar3.getRef());
             }
         };
     }
@@ -167,6 +173,8 @@ public class BookingAndTransitPassengerErrorTest {
                 system.stop(car.getRef());
                 anotherCar.expectMsgClass(Car.TransportRequestMessage.class);
                 assert(anotherCar.getLastSender().equals(transportRequest));
+                system.stop(passenger);
+                system.stop(anotherCar.getRef());
 
 
             }
